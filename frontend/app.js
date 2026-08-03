@@ -24,27 +24,27 @@ async function analyze() {
     hideResults();
 
     try {
-        // Get extraction data
+        // Get extraction data (works without JD)
         const extracted = await extractFromResume(file);
 
-        // Get validation data
+        // Get validation data (works without JD)
         const validation = await validateFromResume(file);
 
-        // Get scoring if JD provided
+        // Get scoring only if JD provided
         let scoring = null;
         if (jdText) {
             scoring = await scoreWithText(file, jdText);
         }
 
-        // Get bullet suggestions from first 5 skills
+        // Get bullet suggestions from skills
         let bullets = null;
         const skills = extracted.data?.extraction?.skills || [];
         if (skills.length > 0) {
-            const bulletTexts = skills.slice(0, 5).map(s => `Experienced in ${s.name}`);
+            const bulletTexts = skills.slice(0, 3).map(s => `Experienced in ${s.name}`);
             bullets = await rewriteBullets(bulletTexts);
         }
 
-        showResults(scoring, validation, extracted, bullets, jdText ? { text: jdText } : null);
+        showResults(scoring, validation, extracted, bullets, jdText);
     } catch (error) {
         alert('Error: ' + error.message);
         console.error(error);
@@ -91,7 +91,6 @@ async function scoreWithText(file, jdText) {
     const formData = new FormData();
     formData.append('resume', file);
 
-    // Create a Blob for the JD text
     const jdBlob = new Blob([jdText], { type: 'text/plain' });
     formData.append('jd', jdBlob, 'job_description.txt');
 
@@ -135,7 +134,7 @@ function hideResults() {
     document.getElementById('results').style.display = 'none';
 }
 
-function showResults(scoring, validation, extracted, bullets, jdParsed) {
+function showResults(scoring, validation, extracted, bullets, jdText) {
     const results = document.getElementById('results');
     results.style.display = 'block';
 
@@ -143,11 +142,20 @@ function showResults(scoring, validation, extracted, bullets, jdParsed) {
     const validationData = validation?.data?.validation || {};
     const scoringData = scoring?.data || {};
 
+    // Show score (0 if no JD)
     renderScoreChart(scoringData.ats_score || 0);
-    renderBreakdown(scoringData.breakdown || {});
-    renderSkills(extractionData, jdParsed);
-    renderBullets(bullets);
+
+    // Show breakdown (empty if no JD)
+    renderBreakdown(scoringData.breakdown || {}, jdText);
+
+    // Show extracted skills
+    renderExtractedSkills(extractionData);
+
+    // Show validation results
     renderValidation(validationData);
+
+    // Show bullet suggestions
+    renderBullets(bullets);
 }
 
 function renderScoreChart(score) {
@@ -163,8 +171,8 @@ function renderScoreChart(score) {
         type: 'doughnut',
         data: {
             datasets: [{
-                data: [score, 100 - score],
-                backgroundColor: ['#2563eb', '#e5e7eb'],
+                data: [score || 1, 100 - (score || 1)],
+                backgroundColor: [score > 0 ? '#2563eb' : '#9ca3af', '#e5e7eb'],
                 borderWidth: 0
             }]
         },
@@ -178,9 +186,14 @@ function renderScoreChart(score) {
     });
 }
 
-function renderBreakdown(breakdown) {
+function renderBreakdown(breakdown, jdText) {
     const container = document.getElementById('breakdown');
     container.innerHTML = '';
+
+    if (!jdText) {
+        container.innerHTML = '<p style="color: #6b7280; font-style: italic;">Add a job description to see ATS scoring</p>';
+        return;
+    }
 
     const categories = {
         skills: 'Skills',
@@ -204,52 +217,55 @@ function renderBreakdown(breakdown) {
     }
 }
 
-function renderSkills(extractionData, jdParsed) {
+function renderExtractedSkills(extractionData) {
+    const container = document.getElementById('skills-match');
+    const missingContainer = document.getElementById('missing-skills');
     const skillsCard = document.getElementById('skills-card');
-    const matchDiv = document.getElementById('skills-match');
-    const missingDiv = document.getElementById('missing-skills');
 
-    if (!jdParsed || !jdParsed.text) {
-        skillsCard.style.display = 'none';
-        return;
-    }
+    const skills = extractionData.skills || [];
+    const emails = extractionData.emails || [];
+    const phones = extractionData.phones || [];
+    const linkedin = extractionData.linkedin || [];
+    const github = extractionData.github || [];
 
-    const resumeSkills = (extractionData.skills || []).map(s =>
-        (typeof s === 'string' ? s : s.name || '').toLowerCase()
-    );
-
-    // Simple keyword extraction from JD text
-    const jdText = jdParsed.text.toLowerCase();
-    const commonSkills = [
-        'python', 'javascript', 'typescript', 'java', 'c++', 'sql', 'aws', 'docker',
-        'kubernetes', 'react', 'node', 'api', 'rest', 'graphql', 'git', 'linux',
-        'machine learning', 'data', 'analytics', 'agile', 'scrum'
-    ];
-
-    const jdSkills = commonSkills.filter(skill => jdText.includes(skill));
-
-    if (jdSkills.length === 0) {
+    if (skills.length === 0 && emails.length === 0) {
         skillsCard.style.display = 'none';
         return;
     }
 
     skillsCard.style.display = 'block';
-    matchDiv.innerHTML = '<h4>Matched Skills</h4>';
-    missingDiv.innerHTML = '<h4>Missing Skills</h4>';
+    container.innerHTML = '<h4>Extracted Skills</h4>';
+    missingContainer.innerHTML = '<h4>Contact Info</h4>';
 
-    jdSkills.forEach(skill => {
-        const isMatched = resumeSkills.some(rs => rs.includes(skill));
-
+    // Show skills
+    skills.forEach(skill => {
         const tag = document.createElement('span');
-        tag.className = `tag ${isMatched ? 'matched' : 'missing'}`;
-        tag.textContent = skill;
-
-        if (isMatched) {
-            matchDiv.appendChild(tag);
-        } else {
-            missingDiv.appendChild(tag);
-        }
+        tag.className = 'tag matched';
+        tag.textContent = skill.name || skill;
+        container.appendChild(tag);
     });
+
+    // Show contact info
+    if (emails.length > 0) {
+        const p = document.createElement('p');
+        p.textContent = 'Email: ' + emails.join(', ');
+        missingContainer.appendChild(p);
+    }
+    if (phones.length > 0) {
+        const p = document.createElement('p');
+        p.textContent = 'Phone: ' + phones.join(', ');
+        missingContainer.appendChild(p);
+    }
+    if (linkedin.length > 0) {
+        const p = document.createElement('p');
+        p.textContent = 'LinkedIn: ' + linkedin.join(', ');
+        missingContainer.appendChild(p);
+    }
+    if (github.length > 0) {
+        const p = document.createElement('p');
+        p.textContent = 'GitHub: ' + github.join(', ');
+        missingContainer.appendChild(p);
+    }
 }
 
 function renderBullets(bullets) {
@@ -270,7 +286,6 @@ function renderBullets(bullets) {
         div.innerHTML = `
             <div class="original">Original: ${item.original}</div>
             <div class="improved">Improved: ${item.improved}</div>
-            <div class="changes">Changes: ${(item.changes_made || []).join(', ')}</div>
         `;
         container.appendChild(div);
     });
@@ -292,19 +307,26 @@ function renderValidation(validationData) {
     const scoreDiv = document.createElement('div');
     scoreDiv.className = 'item';
     scoreDiv.innerHTML = `
-        <span class="label">Overall Score</span>
+        <span class="label">Resume Score</span>
         <span class="value">${validationData.overall_score || 0}% (${validationData.overall_grade || 'N/A'})</span>
     `;
     container.appendChild(scoreDiv);
 
     // Show issues
     const issues = validationData.all_issues || [];
+    if (issues.length > 0) {
+        const header = document.createElement('h4');
+        header.textContent = 'Issues Found';
+        header.style.marginTop = '1rem';
+        container.appendChild(header);
+    }
+
     issues.slice(0, 10).forEach(issue => {
         const item = document.createElement('div');
         item.className = 'item';
-        const passed = issue.severity !== 'error';
+        const isError = issue.severity === 'error';
         item.innerHTML = `
-            <span class="icon ${passed ? 'pass' : 'fail'}">${passed ? '✓' : '✗'}</span>
+            <span class="icon ${isError ? 'fail' : 'pass'}">${isError ? '✗' : '✓'}</span>
             <span>${issue.message}</span>
         `;
         container.appendChild(item);
