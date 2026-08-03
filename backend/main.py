@@ -11,6 +11,8 @@ from backend.api.routes.jd import router as jd_router
 from backend.api.routes.search import router as search_router
 from backend.api.routes.score import router as score_router
 from backend.api.routes.rewrite import router as rewrite_router
+from backend.api.routes.metrics import router as metrics_router
+from backend.middleware.rate_limit import RateLimitMiddleware
 from backend.config.settings import settings
 from backend.utils.logging import get_logger, setup_logging
 
@@ -42,11 +44,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(RateLimitMiddleware, requests_per_minute=settings.rate_limit_per_minute)
+
 app.include_router(resume_router)
 app.include_router(jd_router)
 app.include_router(search_router)
 app.include_router(score_router)
 app.include_router(rewrite_router)
+app.include_router(metrics_router)
 
 
 @app.get("/health")

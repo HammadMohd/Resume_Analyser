@@ -4,6 +4,15 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
+from backend.middleware.rate_limit import disable_rate_limiting, enable_rate_limiting
+
+
+@pytest.fixture(autouse=True)
+def disable_rate_limit():
+    """Disable rate limiting for tests."""
+    disable_rate_limiting()
+    yield
+    enable_rate_limiting()
 
 
 @pytest.fixture

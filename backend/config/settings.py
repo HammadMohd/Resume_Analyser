@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # Server
     host: str = "0.0.0.0"
     port: int = 8000
+    workers: int = 1
 
     # CORS
     cors_origins: list[str] = ["http://localhost:3000"]
@@ -37,9 +38,16 @@ class Settings(BaseSettings):
     upload_dir: str = "./uploads"
     max_upload_size_mb: int = 10
 
+    # Rate Limiting
+    rate_limit_per_minute: int = 60
+
     # Logging
     log_level: str = "INFO"
     log_format: str = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+
+    # Security
+    api_key_header: str = "X-API-Key"
+    api_key: str = ""
 
 
 settings = Settings()
