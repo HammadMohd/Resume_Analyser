@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume ATS Analyzer</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Resume ATS Analyzer</h1>
+            <p>Upload your resume to get an ATS compatibility score</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <h2>Upload</h2>
+                <div class="upload-box">
+                    <div class="input-group">
+                        <label for="resume-file">Resume (PDF/DOCX):</label>
+                        <input type="file" id="resume-file" accept=".pdf,.docx">
+                    </div>
+                    <div class="input-group">
+                        <label for="jd-text">Job Description (optional):</label>
+                        <textarea id="jd-text" rows="4" placeholder="Paste job description here..."></textarea>
+                    </div>
+                    <button id="analyze-btn" disabled>Analyze</button>
+                </div>
+            </section>
+
+            <section class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzing resume...</p>
+            </section>
+
+            <section class="results-section" id="results" style="display: none;">
+                <h2>Results</h2>
+
+                <div class="score-card">
+                    <h3>ATS Score</h3>
+                    <div class="score-chart-container">
+                        <canvas id="score-chart"></canvas>
+                    </div>
+                    <p id="score-label" class="score-label">--</p>
+                </div>
+
+                <div class="breakdown-card">
+                    <h3>Score Breakdown</h3>
+                    <div id="breakdown"></div>
+                </div>
+
+                <div class="skills-card" id="skills-card" style="display: none;">
+                    <h3>Skills Match</h3>
+                    <div id="skills-match"></div>
+                    <div id="missing-skills"></div>
+                </div>
+
+                <div class="bullets-card" id="bullets-card" style="display: none;">
+                    <h3>Bullet Suggestions</h3>
+                    <div id="bullets"></div>
+                </div>
+
+                <div class="validation-card" id="validation-card" style="display: none;">
+                    <h3>Resume Validation</h3>
+                    <div id="validation"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Deterministic-First ATS Analyzer</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
