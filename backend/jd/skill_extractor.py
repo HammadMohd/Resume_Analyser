@@ -46,9 +46,7 @@ class JDSkillExtractor:
         self._skill_patterns: dict[str, re.Pattern] = {}
         for skill in ALL_SKILLS:
             escaped = re.escape(skill)
-            self._skill_patterns[skill] = re.compile(
-                r"\b" + escaped + r"\b", re.IGNORECASE
-            )
+            self._skill_patterns[skill] = re.compile(r"\b" + escaped + r"\b", re.IGNORECASE)
 
     def extract_skills(self, text: str) -> list[JDSkill]:
         """Extract all skills from JD text.

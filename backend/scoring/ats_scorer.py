@@ -87,7 +87,9 @@ class ATSScorer:
 
         logger.info(
             "ATS Score: %.0f/100 (Grade: %s) in %.2f ms",
-            overall_score, grade, elapsed,
+            overall_score,
+            grade,
+            elapsed,
         )
 
         return ATSScore(

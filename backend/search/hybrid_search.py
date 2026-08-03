@@ -79,7 +79,9 @@ class HybridSearch:
 
         logger.info(
             "Match completed: %.1f%% overall (BM25: %.1f%%, Embedding: %.1f%%)",
-            overall_score, bm25_score, embedding_score,
+            overall_score,
+            bm25_score,
+            embedding_score,
         )
 
         return MatchResult(
@@ -158,20 +160,24 @@ class HybridSearch:
         for jd_skill in jd_skills:
             jd_lower = jd_skill.lower()
             if jd_lower in resume_set:
-                matches.append(SkillMatch(
-                    skill=jd_skill,
-                    in_resume=True,
-                    in_jd=True,
-                    match_type="exact",
-                ))
+                matches.append(
+                    SkillMatch(
+                        skill=jd_skill,
+                        in_resume=True,
+                        in_jd=True,
+                        match_type="exact",
+                    )
+                )
             else:
                 # Check for partial match
                 partial = any(jd_lower in s.lower() or s.lower() in jd_lower for s in resume_skills)
-                matches.append(SkillMatch(
-                    skill=jd_skill,
-                    in_resume=partial,
-                    in_jd=True,
-                    match_type="partial" if partial else "missing",
-                ))
+                matches.append(
+                    SkillMatch(
+                        skill=jd_skill,
+                        in_resume=partial,
+                        in_jd=True,
+                        match_type="partial" if partial else "missing",
+                    )
+                )
 
         return matches

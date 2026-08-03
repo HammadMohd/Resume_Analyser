@@ -65,9 +65,7 @@ class SectionDetector:
         """Initialize with compiled patterns."""
         self._compiled = {}
         for section_type, patterns in SECTION_PATTERNS.items():
-            self._compiled[section_type] = [
-                re.compile(p, re.IGNORECASE) for p in patterns
-            ]
+            self._compiled[section_type] = [re.compile(p, re.IGNORECASE) for p in patterns]
 
     def detect_sections(self, text: str) -> list[dict]:
         """Detect sections in resume text.

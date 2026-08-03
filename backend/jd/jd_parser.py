@@ -108,8 +108,12 @@ class JDParser:
             parsing_time_ms=round(elapsed, 2),
         )
 
-        logger.info("JD parsed in %.2f ms: %d skills, %d years required",
-                     elapsed, len(skills), experience.min_years)
+        logger.info(
+            "JD parsed in %.2f ms: %d skills, %d years required",
+            elapsed,
+            len(skills),
+            experience.min_years,
+        )
         return jd
 
     def _extract_title(self, text: str) -> str:
@@ -178,11 +182,40 @@ class JDParser:
 
         # Common stop words to ignore
         stop_words = {
-            "this", "that", "with", "from", "have", "will", "been",
-            "were", "they", "their", "would", "could", "should",
-            "about", "more", "also", "into", "only", "than", "them",
-            "some", "such", "very", "when", "what", "which", "who",
-            "how", "all", "each", "both", "few", "most", "other",
+            "this",
+            "that",
+            "with",
+            "from",
+            "have",
+            "will",
+            "been",
+            "were",
+            "they",
+            "their",
+            "would",
+            "could",
+            "should",
+            "about",
+            "more",
+            "also",
+            "into",
+            "only",
+            "than",
+            "them",
+            "some",
+            "such",
+            "very",
+            "when",
+            "what",
+            "which",
+            "who",
+            "how",
+            "all",
+            "each",
+            "both",
+            "few",
+            "most",
+            "other",
         }
 
         for word in words:

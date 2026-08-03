@@ -46,8 +46,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """Remove requests older than 1 minute."""
         cutoff = now - 60
         self.requests[client_ip] = [
-            req_time for req_time in self.requests[client_ip]
-            if req_time > cutoff
+            req_time for req_time in self.requests[client_ip] if req_time > cutoff
         ]
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
@@ -66,8 +65,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 content={
                     "success": False,
                     "error": "Rate limit exceeded",
-                    "detail": f"Max {self.requests_per_minute} requests per minute"
-                }
+                    "detail": f"Max {self.requests_per_minute} requests per minute",
+                },
             )
 
         self.requests[client_ip].append(now)

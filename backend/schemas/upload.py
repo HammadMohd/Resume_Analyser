@@ -32,9 +32,7 @@ class UploadMetadata(BaseModel):
     stored_filename: str = Field(..., description="UUID-based filename on disk")
     content_type: str = Field(..., description="MIME type of the file")
     size_bytes: int = Field(..., description="File size in bytes")
-    upload_timestamp: datetime = Field(
-        ..., description="UTC timestamp when upload completed"
-    )
+    upload_timestamp: datetime = Field(..., description="UTC timestamp when upload completed")
 
 
 class UploadResponse(BaseModel):

@@ -173,9 +173,7 @@ class TestBulletRules:
                 Experience(
                     company="Google",
                     title="Engineer",
-                    bullets=[
-                        "Developed and maintained various backend services for the team"
-                    ],
+                    bullets=["Developed and maintained various backend services for the team"],
                 )
             ],
         )
@@ -281,18 +279,18 @@ class TestValidateEndpoint:
     @patch("backend.api.routes.resume.StructuredParser")
     @patch("backend.api.routes.resume.ResumeParser")
     @patch("backend.api.routes.resume.UploadService")
-    def test_validate_returns_200(
-        self, MockUpload, MockParser, MockStructured, MockEngine
-    ):
+    def test_validate_returns_200(self, MockUpload, MockParser, MockStructured, MockEngine):
         # Mock upload
         mock_upload = MagicMock()
-        mock_upload.upload_resume = AsyncMock(return_value={
-            "data": {
-                "stored_filename": "abc123.pdf",
-                "original_filename": "resume.pdf",
-                "upload_timestamp": MagicMock(isoformat=lambda: "2024-01-01T00:00:00"),
+        mock_upload.upload_resume = AsyncMock(
+            return_value={
+                "data": {
+                    "stored_filename": "abc123.pdf",
+                    "original_filename": "resume.pdf",
+                    "upload_timestamp": MagicMock(isoformat=lambda: "2024-01-01T00:00:00"),
+                }
             }
-        })
+        )
         MockUpload.return_value = mock_upload
 
         # Mock parser
@@ -302,9 +300,7 @@ class TestValidateEndpoint:
 
         # Mock structured parser
         mock_structured = MagicMock()
-        mock_structured.parse_resume.return_value = NormalizedResume(
-            filename="resume.pdf"
-        )
+        mock_structured.parse_resume.return_value = NormalizedResume(filename="resume.pdf")
         MockStructured.return_value = mock_structured
 
         # Mock rule engine

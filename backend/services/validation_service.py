@@ -84,8 +84,7 @@ class ValidationService:
         if not self._has_valid_extension(file):
             ext = self._get_extension(file)
             errors.append(
-                f"Invalid file extension '{ext}'. "
-                f"Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+                f"Invalid file extension '{ext}'. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
             )
             logger.warning("Validation check failed: invalid extension '%s'", ext)
 

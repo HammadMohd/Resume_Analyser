@@ -3,7 +3,6 @@
 Tests skills scoring, experience scoring, ATS scorer, and endpoints.
 """
 
-
 from fastapi.testclient import TestClient
 
 from backend.main import app
@@ -30,7 +29,7 @@ class TestSkillsScorer:
     def test_all_required_skills_matched(self):
         resume = NormalizedResume(
             filename="test.pdf",
-            skills=[SkillCategory(category="Langs", skills=["Python", "Docker", "AWS"])]
+            skills=[SkillCategory(category="Langs", skills=["Python", "Docker", "AWS"])],
         )
         jd = JobDescription(
             skills=[
@@ -45,8 +44,7 @@ class TestSkillsScorer:
 
     def test_partial_skills_matched(self):
         resume = NormalizedResume(
-            filename="test.pdf",
-            skills=[SkillCategory(category="Langs", skills=["Python"])]
+            filename="test.pdf", skills=[SkillCategory(category="Langs", skills=["Python"])]
         )
         jd = JobDescription(
             skills=[
@@ -59,8 +57,7 @@ class TestSkillsScorer:
 
     def test_no_skills_matched(self):
         resume = NormalizedResume(
-            filename="test.pdf",
-            skills=[SkillCategory(category="Langs", skills=["Java"])]
+            filename="test.pdf", skills=[SkillCategory(category="Langs", skills=["Java"])]
         )
         jd = JobDescription(
             skills=[
@@ -75,7 +72,7 @@ class TestSkillsScorer:
     def test_preferred_skills_bonus(self):
         resume = NormalizedResume(
             filename="test.pdf",
-            skills=[SkillCategory(category="Langs", skills=["Python", "Redis"])]
+            skills=[SkillCategory(category="Langs", skills=["Python", "Redis"])],
         )
         jd = JobDescription(
             skills=[
@@ -88,8 +85,7 @@ class TestSkillsScorer:
 
     def test_no_jd_skills(self):
         resume = NormalizedResume(
-            filename="test.pdf",
-            skills=[SkillCategory(category="Langs", skills=["Python"])]
+            filename="test.pdf", skills=[SkillCategory(category="Langs", skills=["Python"])]
         )
         jd = JobDescription(skills=[])
         result = score_skills(resume, jd)
@@ -109,11 +105,9 @@ class TestExperienceScorer:
                 Experience(company="Google", title="Engineer"),
                 Experience(company="Meta", title="Engineer"),
                 Experience(company="Amazon", title="Engineer"),
-            ]
+            ],
         )
-        jd = JobDescription(
-            experience=JDExperience(min_years=3, level="mid")
-        )
+        jd = JobDescription(experience=JDExperience(min_years=3, level="mid"))
         result = score_experience(resume, jd)
         assert result.score >= 60
 
@@ -122,18 +116,15 @@ class TestExperienceScorer:
             filename="test.pdf",
             experience=[
                 Experience(company="Startup", title="Junior"),
-            ]
+            ],
         )
-        jd = JobDescription(
-            experience=JDExperience(min_years=5, level="senior")
-        )
+        jd = JobDescription(experience=JDExperience(min_years=5, level="senior"))
         result = score_experience(resume, jd)
         assert result.score < 80
 
     def test_no_experience_requirement(self):
         resume = NormalizedResume(
-            filename="test.pdf",
-            experience=[Experience(company="Google", title="Engineer")]
+            filename="test.pdf", experience=[Experience(company="Google", title="Engineer")]
         )
         jd = JobDescription(experience=JDExperience())
         result = score_experience(resume, jd)
@@ -198,20 +189,15 @@ class TestATSScorer:
 
     def test_recommendations_generated(self):
         resume = NormalizedResume(filename="resume.pdf")
-        jd = JobDescription(
-            skills=[JDSkill(name="Python", required=True)]
-        )
+        jd = JobDescription(skills=[JDSkill(name="Python", required=True)])
         result = self.scorer.score(resume, jd)
         assert len(result.recommendations) > 0
 
     def test_missing_skills_identified(self):
         resume = NormalizedResume(
-            filename="test.pdf",
-            skills=[SkillCategory(category="Langs", skills=["Java"])]
+            filename="test.pdf", skills=[SkillCategory(category="Langs", skills=["Java"])]
         )
-        jd = JobDescription(
-            skills=[JDSkill(name="Python", required=True)]
-        )
+        jd = JobDescription(skills=[JDSkill(name="Python", required=True)])
         result = self.scorer.score(resume, jd)
         assert "Python" in result.missing_skills
 
@@ -235,6 +221,7 @@ class TestScoringSchema:
 
     def test_ats_score_minimal(self):
         from backend.schemas.scoring import ScoreBreakdown
+
         breakdown = ScoreBreakdown(
             skills=ScoreDetail(category="skills", score=80),
             experience=ScoreDetail(category="experience", score=70),

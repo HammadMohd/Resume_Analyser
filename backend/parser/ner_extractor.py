@@ -21,19 +21,13 @@ from backend.utils.logging import get_logger
 logger = get_logger(__name__)
 
 # Email pattern
-EMAIL_RE = re.compile(
-    r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-)
+EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
 # Phone patterns - supports international formats
-PHONE_RE = re.compile(
-    r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}"
-)
+PHONE_RE = re.compile(r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}")
 
 # URL patterns
-URL_RE = re.compile(
-    r"https?://[^\s<>\"']+|www\.[^\s<>\"']+"
-)
+URL_RE = re.compile(r"https?://[^\s<>\"']+|www\.[^\s<>\"']+")
 
 # LinkedIn - multiple formats
 LINKEDIN_RE = re.compile(
@@ -41,9 +35,7 @@ LINKEDIN_RE = re.compile(
 )
 
 # GitHub - multiple formats
-GITHUB_RE = re.compile(
-    r"(?:https?://(?:www\.)?)?github\.com/[a-zA-Z0-9_-]+", re.IGNORECASE
-)
+GITHUB_RE = re.compile(r"(?:https?://(?:www\.)?)?github\.com/[a-zA-Z0-9_-]+", re.IGNORECASE)
 
 # Date patterns
 DATE_PATTERNS = [
@@ -74,30 +66,122 @@ DATE_PATTERNS = [
 
 # Skill keywords (common technical skills)
 TECH_SKILLS = {
-    "python", "java", "javascript", "typescript", "c++", "c#", "ruby", "go", "golang",
-    "rust", "kotlin", "swift", "scala", "php", "perl", "r", "matlab", "sql",
-    "html", "css", "scss", "sass", "less",
-    "react", "angular", "vue", "vue.js", "svelte", "next.js", "nuxt",
-    "node.js", "nodejs", "express", "django", "flask", "fastapi", "spring",
-    "rails", "laravel", "asp.net", "dotnet",
-    "aws", "azure", "gcp", "google cloud", "docker", "kubernetes", "k8s",
-    "terraform", "ansible", "jenkins", "ci/cd", "github actions",
-    "postgresql", "mysql", "mongodb", "redis", "elasticsearch", "dynamodb",
-    "sqlite", "oracle", "sql server",
-    "git", "github", "gitlab", "bitbucket",
-    "linux", "unix", "bash", "powershell",
-    "machine learning", "deep learning", "nlp", "natural language processing",
-    "tensorflow", "pytorch", "keras", "scikit-learn", "pandas", "numpy",
-    "graphql", "rest", "restful", "api", "microservices",
-    "agile", "scrum", "jira", "confluence",
+    "python",
+    "java",
+    "javascript",
+    "typescript",
+    "c++",
+    "c#",
+    "ruby",
+    "go",
+    "golang",
+    "rust",
+    "kotlin",
+    "swift",
+    "scala",
+    "php",
+    "perl",
+    "r",
+    "matlab",
+    "sql",
+    "html",
+    "css",
+    "scss",
+    "sass",
+    "less",
+    "react",
+    "angular",
+    "vue",
+    "vue.js",
+    "svelte",
+    "next.js",
+    "nuxt",
+    "node.js",
+    "nodejs",
+    "express",
+    "django",
+    "flask",
+    "fastapi",
+    "spring",
+    "rails",
+    "laravel",
+    "asp.net",
+    "dotnet",
+    "aws",
+    "azure",
+    "gcp",
+    "google cloud",
+    "docker",
+    "kubernetes",
+    "k8s",
+    "terraform",
+    "ansible",
+    "jenkins",
+    "ci/cd",
+    "github actions",
+    "postgresql",
+    "mysql",
+    "mongodb",
+    "redis",
+    "elasticsearch",
+    "dynamodb",
+    "sqlite",
+    "oracle",
+    "sql server",
+    "git",
+    "github",
+    "gitlab",
+    "bitbucket",
+    "linux",
+    "unix",
+    "bash",
+    "powershell",
+    "machine learning",
+    "deep learning",
+    "nlp",
+    "natural language processing",
+    "tensorflow",
+    "pytorch",
+    "keras",
+    "scikit-learn",
+    "pandas",
+    "numpy",
+    "graphql",
+    "rest",
+    "restful",
+    "api",
+    "microservices",
+    "agile",
+    "scrum",
+    "jira",
+    "confluence",
 }
 
 # Common job titles for name detection heuristics
 JOB_TITLE_WORDS = {
-    "engineer", "developer", "manager", "analyst", "lead", "senior",
-    "junior", "staff", "principal", "director", "intern", "consultant",
-    "architect", "scientist", "designer", "coordinator", "specialist",
-    "assistant", "associate", "executive", "officer", "head", "vp",
+    "engineer",
+    "developer",
+    "manager",
+    "analyst",
+    "lead",
+    "senior",
+    "junior",
+    "staff",
+    "principal",
+    "director",
+    "intern",
+    "consultant",
+    "architect",
+    "scientist",
+    "designer",
+    "coordinator",
+    "specialist",
+    "assistant",
+    "associate",
+    "executive",
+    "officer",
+    "head",
+    "vp",
 }
 
 

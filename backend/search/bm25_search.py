@@ -85,9 +85,7 @@ class BM25Search:
 
                 # BM25 formula
                 numerator = term_tf * (self.k1 + 1)
-                denominator = term_tf + self.k1 * (
-                    1 - self.b + self.b * (doc_len / avg_doc_len)
-                )
+                denominator = term_tf + self.k1 * (1 - self.b + self.b * (doc_len / avg_doc_len))
                 term_score = term_idf * (numerator / denominator)
 
                 score += term_score

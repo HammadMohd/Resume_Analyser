@@ -74,9 +74,7 @@ def build_multi_bullet_rewrite_prompt(
     Returns:
         Formatted prompt string.
     """
-    bullets_text = "\n".join(
-        f'{i+1}. "{b["original"]}"' for i, b in enumerate(bullets)
-    )
+    bullets_text = "\n".join(f'{i + 1}. "{b["original"]}"' for i, b in enumerate(bullets))
 
     jd_context = ""
     if job_description:

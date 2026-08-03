@@ -3,7 +3,6 @@
 Tests prompt building, validation, bullet rewriting, and endpoints.
 """
 
-
 from fastapi.testclient import TestClient
 
 from backend.llm.prompt_builder import (
@@ -158,9 +157,7 @@ class TestLLMSchema:
 
     def test_rewrite_response(self):
         response = RewriteResponse(
-            rewritten_bullets=[
-                BulletRewriteResponse(original="Test", improved="Improved test")
-            ],
+            rewritten_bullets=[BulletRewriteResponse(original="Test", improved="Improved test")],
             total_improved=1,
         )
         assert response.total_improved == 1

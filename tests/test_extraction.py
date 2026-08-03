@@ -202,18 +202,18 @@ class TestExtractEndpoint:
     @patch("backend.api.routes.resume.StructuredParser")
     @patch("backend.api.routes.resume.ResumeParser")
     @patch("backend.api.routes.resume.UploadService")
-    def test_extract_returns_200(
-        self, MockUpload, MockParser, MockStructured, MockExtraction
-    ):
+    def test_extract_returns_200(self, MockUpload, MockParser, MockStructured, MockExtraction):
         # Mock upload
         mock_upload = MagicMock()
-        mock_upload.upload_resume = AsyncMock(return_value={
-            "data": {
-                "stored_filename": "abc123.pdf",
-                "original_filename": "resume.pdf",
-                "upload_timestamp": MagicMock(isoformat=lambda: "2024-01-01T00:00:00"),
+        mock_upload.upload_resume = AsyncMock(
+            return_value={
+                "data": {
+                    "stored_filename": "abc123.pdf",
+                    "original_filename": "resume.pdf",
+                    "upload_timestamp": MagicMock(isoformat=lambda: "2024-01-01T00:00:00"),
+                }
             }
-        })
+        )
         MockUpload.return_value = mock_upload
 
         # Mock parser

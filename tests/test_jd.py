@@ -164,6 +164,7 @@ class TestJDSchema:
 
     def test_full_jd(self):
         from backend.schemas.jd import JDExperience, JDSkill
+
         jd = JobDescription(
             title="Engineer",
             skills=[JDSkill(name="python")],

@@ -177,12 +177,8 @@ class TestResumeSchema:
         resume = NormalizedResume(
             filename="test.pdf",
             contact=ContactInfo(name="John", email="john@test.com"),
-            experience=[
-                Experience(company="Google", title="Engineer", bullets=["Built stuff"])
-            ],
-            education=[
-                Education(institution="MIT", degree="BS CS")
-            ],
+            experience=[Experience(company="Google", title="Engineer", bullets=["Built stuff"])],
+            education=[Education(institution="MIT", degree="BS CS")],
             skills=[SkillCategory(category="Langs", skills=["Python"])],
         )
         assert resume.contact.name == "John"
@@ -209,13 +205,15 @@ class TestNormalizeEndpoint:
     def test_normalize_returns_200(self, MockUpload, MockParser, MockStructured):
         # Mock upload (async method)
         mock_upload = MagicMock()
-        mock_upload.upload_resume = AsyncMock(return_value={
-            "data": {
-                "stored_filename": "abc123.pdf",
-                "original_filename": "resume.pdf",
-                "upload_timestamp": MagicMock(isoformat=lambda: "2024-01-01T00:00:00"),
+        mock_upload.upload_resume = AsyncMock(
+            return_value={
+                "data": {
+                    "stored_filename": "abc123.pdf",
+                    "original_filename": "resume.pdf",
+                    "upload_timestamp": MagicMock(isoformat=lambda: "2024-01-01T00:00:00"),
+                }
             }
-        })
+        )
         MockUpload.return_value = mock_upload
 
         # Mock parser
@@ -225,9 +223,7 @@ class TestNormalizeEndpoint:
 
         # Mock structured parser
         mock_structured = MagicMock()
-        mock_structured.parse_resume.return_value = NormalizedResume(
-            filename="resume.pdf"
-        )
+        mock_structured.parse_resume.return_value = NormalizedResume(filename="resume.pdf")
         MockStructured.return_value = mock_structured
 
         file_content = io.BytesIO(b"fake pdf content")

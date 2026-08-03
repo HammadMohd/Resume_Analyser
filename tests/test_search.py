@@ -3,7 +3,6 @@
 Tests BM25 search, embedding search, hybrid matching, and endpoints.
 """
 
-
 from fastapi.testclient import TestClient
 
 from backend.main import app

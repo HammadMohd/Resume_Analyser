@@ -31,24 +31,16 @@ from backend.utils.logging import get_logger
 logger = get_logger(__name__)
 
 # Email pattern
-EMAIL_PATTERN = re.compile(
-    r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-)
+EMAIL_PATTERN = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
 # Phone patterns (US formats)
-PHONE_PATTERN = re.compile(
-    r"(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}"
-)
+PHONE_PATTERN = re.compile(r"(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}")
 
 # LinkedIn pattern
-LINKEDIN_PATTERN = re.compile(
-    r"linkedin\.com/in/[a-zA-Z0-9_-]+", re.IGNORECASE
-)
+LINKEDIN_PATTERN = re.compile(r"linkedin\.com/in/[a-zA-Z0-9_-]+", re.IGNORECASE)
 
 # GitHub pattern
-GITHUB_PATTERN = re.compile(
-    r"github\.com/[a-zA-Z0-9_-]+", re.IGNORECASE
-)
+GITHUB_PATTERN = re.compile(r"github\.com/[a-zA-Z0-9_-]+", re.IGNORECASE)
 
 # Date patterns
 DATE_RANGE_PATTERN = re.compile(
@@ -57,14 +49,10 @@ DATE_RANGE_PATTERN = re.compile(
 )
 
 # Bullet patterns
-BULLET_PATTERN = re.compile(
-    r"^[\s]*[-•●▪▸→*]\s+(.+)$"
-)
+BULLET_PATTERN = re.compile(r"^[\s]*[-•●▪▸→*]\s+(.+)$")
 
 # Skill category patterns
-SKILL_CATEGORY_PATTERN = re.compile(
-    r"^([A-Za-z\s/]+):\s*(.+)$"
-)
+SKILL_CATEGORY_PATTERN = re.compile(r"^([A-Za-z\s/]+):\s*(.+)$")
 
 
 class StructuredParser:
@@ -85,6 +73,7 @@ class StructuredParser:
             Fully normalized resume object.
         """
         import time
+
         start = time.time()
 
         sections = self.detector.detect_sections(text)
@@ -233,9 +222,19 @@ class StructuredParser:
         """Heuristic to detect job header lines."""
         # Contains common job title words
         job_words = [
-            "engineer", "developer", "manager", "analyst", "lead",
-            "senior", "junior", "staff", "principal", "director",
-            "intern", "consultant", "architect",
+            "engineer",
+            "developer",
+            "manager",
+            "analyst",
+            "lead",
+            "senior",
+            "junior",
+            "staff",
+            "principal",
+            "director",
+            "intern",
+            "consultant",
+            "architect",
         ]
         line_lower = line.lower()
         return any(word in line_lower for word in job_words)
@@ -243,7 +242,7 @@ class StructuredParser:
     def _split_company_title(self, text: str, date_match: re.Match | None) -> dict:
         """Split a line into company and title."""
         if date_match:
-            text = text[:date_match.start()].strip().rstrip(",").strip()
+            text = text[: date_match.start()].strip().rstrip(",").strip()
 
         # Common separators
         for sep in [" at ", " @ ", " | ", " - ", " — "]:
@@ -276,7 +275,7 @@ class StructuredParser:
                 # Try to extract institution and degree
                 text_without_dates = stripped
                 if date_match:
-                    text_without_dates = stripped[:date_match.start()].strip()
+                    text_without_dates = stripped[: date_match.start()].strip()
 
                 parts = self._split_degree_institution(text_without_dates)
                 current.degree = parts.get("degree", "")
@@ -293,8 +292,18 @@ class StructuredParser:
     def _looks_like_education_header(self, line: str) -> bool:
         """Heuristic to detect education header lines."""
         edu_words = [
-            "university", "college", "institute", "school",
-            "bachelor", "master", "phd", "degree", "bs", "ba", "ms", "mba",
+            "university",
+            "college",
+            "institute",
+            "school",
+            "bachelor",
+            "master",
+            "phd",
+            "degree",
+            "bs",
+            "ba",
+            "ms",
+            "mba",
         ]
         line_lower = line.lower()
         return any(word in line_lower for word in edu_words)
