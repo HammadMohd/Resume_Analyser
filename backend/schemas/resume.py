@@ -99,6 +99,8 @@ class NormalizedResume(BaseModel):
     skills: list[SkillCategory] = Field(default_factory=list, description="Skills by category")
     projects: list[Project] = Field(default_factory=list, description="Projects")
     certifications: list[Certification] = Field(default_factory=list, description="Certifications")
-    sections_detected: list[ResumeSection] = Field(default_factory=list, description="Detected sections")
+    sections_detected: list[ResumeSection] = Field(
+        default_factory=list, description="Detected sections"
+    )
     raw_text: str = Field("", description="Original parsed text")
     normalization_time_ms: float = Field(0, description="Time taken (ms)")

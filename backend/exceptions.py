@@ -24,7 +24,7 @@ Usage:
 """
 
 
-class AppException(Exception):
+class AppError(Exception):
     """Base exception for all application errors.
 
     All custom exceptions inherit from this. Provides:
@@ -53,7 +53,7 @@ class AppException(Exception):
         }
 
 
-class FileValidationError(AppException):
+class FileValidationError(AppError):
     """Raised when file validation fails.
 
     Attributes:
@@ -69,7 +69,7 @@ class FileValidationError(AppException):
         super().__init__(message=message, errors=errors, status_code=422)
 
 
-class FileStorageError(AppException):
+class FileStorageError(AppError):
     """Raised when file storage fails.
 
     Attributes:
@@ -80,7 +80,7 @@ class FileStorageError(AppException):
         super().__init__(message=message, status_code=500)
 
 
-class FileTooLargeError(AppException):
+class FileTooLargeError(AppError):
     """Raised when file exceeds size limit.
 
     Attributes:
@@ -97,14 +97,14 @@ class FileTooLargeError(AppException):
         self.max_size_mb = max_size_mb
 
 
-class FileEmptyError(AppException):
+class FileEmptyError(AppError):
     """Raised when uploaded file is empty."""
 
     def __init__(self, message: str = "File is empty") -> None:
         super().__init__(message=message, status_code=422)
 
 
-class UnsupportedFileTypeError(AppException):
+class UnsupportedFileTypeError(AppError):
     """Raised when file type is not supported.
 
     Attributes:

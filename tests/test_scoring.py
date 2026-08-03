@@ -3,16 +3,11 @@
 Tests skills scoring, experience scoring, ATS scorer, and endpoints.
 """
 
-import io
-from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
-from backend.scoring.skills_scorer import score_skills
-from backend.scoring.experience_scorer import score_experience
-from backend.scoring.ats_scorer import ATSScorer
+from backend.schemas.jd import JDExperience, JDSkill, JobDescription
 from backend.schemas.resume import (
     ContactInfo,
     Education,
@@ -21,9 +16,10 @@ from backend.schemas.resume import (
     Project,
     SkillCategory,
 )
-from backend.schemas.jd import JobDescription, JDSkill, JDExperience, JDEducation
 from backend.schemas.scoring import ATSScore, ScoreDetail
-
+from backend.scoring.ats_scorer import ATSScorer
+from backend.scoring.experience_scorer import score_experience
+from backend.scoring.skills_scorer import score_skills
 
 # ── Skills Scorer Tests ─────────────────────────────────────────────
 

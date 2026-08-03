@@ -4,9 +4,7 @@ Tests the complete flow:
     Client → Router → ValidationService → StorageService → Response
 """
 
-import json
 
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -77,7 +75,8 @@ class TestUploadPipeline:
 
     def test_docx_upload_flow(self, client: TestClient):
         """Test DOCX upload follows same pipeline."""
-        files = {"file": ("resume.docx", b"PK docx content", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
+        docx_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        files = {"file": ("resume.docx", b"PK docx content", docx_mime)}
         response = client.post("/api/v1/resumes/", files=files)
 
         assert response.status_code == 200

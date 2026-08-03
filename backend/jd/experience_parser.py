@@ -38,7 +38,10 @@ LEVEL_PATTERNS = [
     (re.compile(r"\b(?:mid[\s-]level|intermediate)\b", re.IGNORECASE), "mid"),
     (re.compile(r"\b(?:senior|sr\.?|experienced)\b", re.IGNORECASE), "senior"),
     (re.compile(r"\b(?:lead|principal|staff|architect)\b", re.IGNORECASE), "lead"),
-    (re.compile(r"\b(?:director|vp|vice[\s-]president|c[\s-]?to|head)\b", re.IGNORECASE), "executive"),
+    (
+        re.compile(r"\b(?:director|vp|vice[\s-]president|c[\s-]?to|head)\b", re.IGNORECASE),
+        "executive",
+    ),
 ]
 
 

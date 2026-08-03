@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from backend.parser.docx_parser import DOCXParser
 from backend.parser.pdf_parser import PDFParser
-from backend.parser.resume_parser import ResumeParser
+from backend.parser.resume_parser import ParseError, ResumeParser
 
 
 @pytest.fixture
@@ -34,11 +34,11 @@ endstream
 endobj
 xref
 0 5
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000266 00000 n 
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000266 00000 n
 trailer
 << /Size 5 /Root 1 0 R >>
 startxref
@@ -115,7 +115,7 @@ class TestResumeParser:
     def test_unsupported_type(self):
         """Resume parser should reject unsupported types."""
         parser = ResumeParser()
-        with pytest.raises(Exception):
+        with pytest.raises(ParseError):
             parser.parse("test.txt", "test.txt")
 
 
@@ -136,7 +136,8 @@ class TestParseEndpoint:
     def test_parse_docx_endpoint(self, client: TestClient, docx_file):
         """Parse endpoint should accept DOCX uploads."""
         with open(docx_file, "rb") as f:
-            files = {"file": ("test.docx", f, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
+            docx_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            files = {"file": ("test.docx", f, docx_mime)}
             response = client.post("/api/v1/resumes/parse", files=files)
         assert response.status_code == 200
         data = response.json()

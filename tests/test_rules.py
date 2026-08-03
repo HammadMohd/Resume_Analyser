@@ -6,15 +6,13 @@ Tests contact rules, section rules, bullet rules, and the validate endpoint.
 import io
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
-from backend.rules.contact_rules import evaluate_contact
-from backend.rules.section_rules import evaluate_sections
 from backend.rules.bullet_rules import evaluate_bullets
-from backend.rules.completeness_rules import evaluate_completeness
+from backend.rules.contact_rules import evaluate_contact
 from backend.rules.rule_engine import RuleEngine
+from backend.rules.section_rules import evaluate_sections
 from backend.schemas.resume import (
     ContactInfo,
     Education,
@@ -23,7 +21,6 @@ from backend.schemas.resume import (
     SkillCategory,
 )
 from backend.schemas.rules import RuleResult
-
 
 # ── Contact Rules Tests ─────────────────────────────────────────────
 

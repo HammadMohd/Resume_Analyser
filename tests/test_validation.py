@@ -33,7 +33,8 @@ class TestValidationService:
     @pytest.mark.asyncio
     async def test_valid_docx(self, service: ValidationService):
         """Valid DOCX should pass validation."""
-        file = make_file("resume.docx", b"PK content", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        docx_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        file = make_file("resume.docx", b"PK content", docx_mime)
         await service.validate(file)
 
     @pytest.mark.asyncio

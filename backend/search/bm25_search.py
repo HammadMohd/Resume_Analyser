@@ -20,7 +20,6 @@ Limitations:
 - Doesn't capture semantic meaning
 """
 
-import math
 import re
 
 from backend.schemas.search import BM25Result

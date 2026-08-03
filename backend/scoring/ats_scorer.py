@@ -10,11 +10,11 @@ ATS Score = 35% Skills + 25% Experience + 15% Projects
 
 import time
 
-from backend.scoring.skills_scorer import score_skills
-from backend.scoring.experience_scorer import score_experience
 from backend.schemas.jd import JobDescription
 from backend.schemas.resume import NormalizedResume
 from backend.schemas.scoring import ATSScore, ScoreBreakdown, ScoreDetail
+from backend.scoring.experience_scorer import score_experience
+from backend.scoring.skills_scorer import score_skills
 from backend.utils.logging import get_logger
 
 logger = get_logger(__name__)

@@ -1,8 +1,6 @@
 """Tests for production features (rate limiting, metrics)."""
 
-import time
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.middleware.rate_limit import disable_rate_limiting, enable_rate_limiting

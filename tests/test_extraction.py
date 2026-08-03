@@ -6,15 +6,13 @@ Tests NER extraction, skills extraction, and the extract endpoint.
 import io
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
+from backend.parser.extraction_engine import ExtractionEngine
 from backend.parser.ner_extractor import NERExtractor
 from backend.parser.skills_extractor import SkillsExtractor
-from backend.parser.extraction_engine import ExtractionEngine
 from backend.schemas.extraction import ExtractionResult
-
 
 # ── NER Extractor Tests ─────────────────────────────────────────────
 

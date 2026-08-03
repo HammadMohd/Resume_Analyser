@@ -243,8 +243,7 @@ class SkillsExtractor:
             if "next.js" not in found:
                 suggestions.append("next.js")
 
-        if "python" in found:
-            if "fastapi" not in found and "django" not in found:
-                suggestions.append("fastapi")
+        if "python" in found and "fastapi" not in found and "django" not in found:
+            suggestions.append("fastapi")
 
         return suggestions

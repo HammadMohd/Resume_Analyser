@@ -15,11 +15,11 @@ Weighting:
 
 import time
 
-from backend.search.bm25_search import BM25Search
-from backend.search.embedding_search import EmbeddingSearch
 from backend.schemas.jd import JobDescription
 from backend.schemas.resume import NormalizedResume
-from backend.schemas.search import MatchResult, SkillMatch, BM25Result, EmbeddingResult
+from backend.schemas.search import MatchResult, SkillMatch
+from backend.search.bm25_search import BM25Search
+from backend.search.embedding_search import EmbeddingSearch
 from backend.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -62,7 +62,9 @@ class HybridSearch:
         # Combine scores
         bm25_score = bm25_result.score * 100
         embedding_score = embedding_result.score * 100
-        overall_score = (bm25_result.score * BM25_WEIGHT + embedding_result.score * EMBEDDING_WEIGHT) * 100
+        overall_score = (
+            bm25_result.score * BM25_WEIGHT + embedding_result.score * EMBEDDING_WEIGHT
+        ) * 100
 
         # Skill-by-skill matching
         resume_skills = self._extract_all_skills(resume)
@@ -151,7 +153,7 @@ class HybridSearch:
     def _match_skills(self, resume_skills: list[str], jd_skills: list[str]) -> list[SkillMatch]:
         """Match resume skills against JD skills."""
         matches = []
-        resume_set = set(s.lower() for s in resume_skills)
+        resume_set = {s.lower() for s in resume_skills}
 
         for jd_skill in jd_skills:
             jd_lower = jd_skill.lower()

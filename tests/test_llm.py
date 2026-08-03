@@ -3,23 +3,23 @@
 Tests prompt building, validation, bullet rewriting, and endpoints.
 """
 
-import io
 
-import pytest
 from fastapi.testclient import TestClient
 
-from backend.main import app
-from backend.llm.prompt_builder import build_bullet_rewrite_prompt, build_multi_bullet_rewrite_prompt
-from backend.llm.validator import validate_bullet_rewrite
+from backend.llm.prompt_builder import (
+    build_bullet_rewrite_prompt,
+    build_multi_bullet_rewrite_prompt,
+)
 from backend.llm.rewriter import BulletRewriter
 from backend.llm.schemas import (
     BulletRewriteRequest,
     BulletRewriteResponse,
+    LLMValidationResult,
     RewriteRequest,
     RewriteResponse,
-    LLMValidationResult,
 )
-
+from backend.llm.validator import validate_bullet_rewrite
+from backend.main import app
 
 # ── Prompt Builder Tests ────────────────────────────────────────────
 

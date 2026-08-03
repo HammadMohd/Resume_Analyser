@@ -6,7 +6,6 @@ Tests section detection, structured parsing, and the normalize endpoint.
 import io
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
@@ -19,7 +18,6 @@ from backend.schemas.resume import (
     NormalizedResume,
     SkillCategory,
 )
-
 
 # ── Section Detector Tests ──────────────────────────────────────────
 

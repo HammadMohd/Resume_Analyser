@@ -38,27 +38,23 @@ def build_bullet_rewrite_prompt(
     if context:
         context_text = f"\nTarget role: {context}"
 
-    prompt = f"""You are a professional resume writer. Rewrite the following bullet point to be more impactful and ATS-friendly.
-
-Rules:
-1. Start with a strong action verb
-2. Include quantifiable metrics if possible (but do NOT invent fake numbers)
-3. Keep it concise (1-2 lines max)
-4. Do NOT add technologies or skills not mentioned in the original
-5. Do NOT fabricate experience or achievements
-6. Return ONLY valid JSON with the specified format
-
-{context_text}{skills_text}
-
-Original bullet:
-"{original}"
-
-Return your response as JSON:
-{{
-  "improved": "Your improved bullet here",
-  "changes_made": ["list of changes made"],
-  "confidence": 0.8
-}}"""
+    prompt = (
+        "You are a professional resume writer. Rewrite the following bullet point "
+        "to be more impactful and ATS-friendly.\n\n"
+        "Rules:\n"
+        "1. Start with a strong action verb\n"
+        "2. Include quantifiable metrics if possible (but do NOT invent fake numbers)\n"
+        "3. Keep it concise (1-2 lines max)\n"
+        "4. Do NOT add technologies or skills not mentioned in the original\n"
+        "5. Do NOT fabricate experience or achievements\n"
+        "6. Return ONLY valid JSON with the specified format\n\n"
+        f"{context_text}{skills_text}\n\n"
+        f'Original bullet:\n"{original}"\n\n'
+        "Return your response as JSON:\n"
+        '{\n  "improved": "Your improved bullet here",\n'
+        '  "changes_made": ["list of changes made"],\n'
+        '  "confidence": 0.8\n}'
+    )
 
     return prompt
 
@@ -88,32 +84,26 @@ def build_multi_bullet_rewrite_prompt(
         jd_short = job_description[:500] + "..." if len(job_description) > 500 else job_description
         jd_context = f"\nJob Description Context:\n{jd_short}"
 
-    prompt = f"""You are a professional resume writer. Rewrite the following bullet points to be more impactful and ATS-friendly.
-
-Target Role: {job_title or "Not specified"}
-{jd_context}
-
-Rules:
-1. Start each bullet with a strong action verb
-2. Include quantifiable metrics ONLY if they exist in the original
-3. Keep bullets concise (1-2 lines max)
-4. Do NOT add technologies or skills not in the original
-5. Do NOT fabricate experience or achievements
-6. Return ONLY valid JSON with the specified format
-
-Original Bullets:
-{bullets_text}
-
-Return your response as JSON:
-{{
-  "rewritten": [
-    {{
-      "original": "original bullet 1",
-      "improved": "improved bullet 1",
-      "changes_made": ["change 1", "change 2"],
-      "confidence": 0.8
-    }}
-  ]
-}}"""
+    prompt = (
+        "You are a professional resume writer. Rewrite the following bullet points "
+        "to be more impactful and ATS-friendly.\n\n"
+        f"Target Role: {job_title or 'Not specified'}\n"
+        f"{jd_context}\n\n"
+        "Rules:\n"
+        "1. Start each bullet with a strong action verb\n"
+        "2. Include quantifiable metrics ONLY if they exist in the original\n"
+        "3. Keep bullets concise (1-2 lines max)\n"
+        "4. Do NOT add technologies or skills not in the original\n"
+        "5. Do NOT fabricate experience or achievements\n"
+        "6. Return ONLY valid JSON with the specified format\n\n"
+        f"Original Bullets:\n{bullets_text}\n\n"
+        "Return your response as JSON:\n"
+        '{\n  "rewritten": [\n    {\n'
+        '      "original": "original bullet 1",\n'
+        '      "improved": "improved bullet 1",\n'
+        '      "changes_made": ["change 1", "change 2"],\n'
+        '      "confidence": 0.8\n'
+        "    }\n  ]\n}"
+    )
 
     return prompt

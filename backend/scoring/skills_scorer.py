@@ -77,17 +77,19 @@ def score_skills(resume: NormalizedResume, jd: JobDescription) -> ScoreDetail:
 
     # Normalize to 0-100
     max_possible = len(required_skills) * 10 + len(preferred_skills) * 5
-    if max_possible > 0:
-        normalized_score = (score / max_possible) * 100
-    else:
-        normalized_score = 0
+    normalized_score = (score / max_possible) * 100 if max_possible > 0 else 0
 
     # Summary
     total_matched = required_matched + preferred_matched
     total_skills = len(required_skills) + len(preferred_skills)
     reasoning.insert(0, f"Matched {total_matched}/{total_skills} skills")
 
-    logger.info("Skills score: %.0f/100 (%d/%d matched)", normalized_score, total_matched, total_skills)
+    logger.info(
+        "Skills score: %.0f/100 (%d/%d matched)",
+        normalized_score,
+        total_matched,
+        total_skills,
+    )
 
     return ScoreDetail(
         category="skills",

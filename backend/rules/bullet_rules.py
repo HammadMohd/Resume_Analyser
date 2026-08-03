@@ -138,7 +138,7 @@ def _score_single_bullet(bullet: str, index: int, issues: list[Issue]) -> float:
                 severity="warning",
                 message=f"Bullet {index} doesn't start with an action verb",
                 section="experience",
-                suggestion=f"Start with a strong action verb (e.g., 'Led', 'Built', 'Improved')",
+                suggestion="Start with a strong action verb (e.g., 'Led', 'Built', 'Improved')",
             )
         )
 
@@ -197,10 +197,7 @@ def _has_action_verb(bullet: str) -> bool:
 
 def _has_metrics(bullet: str) -> bool:
     """Check if bullet contains quantifiable metrics."""
-    for pattern in METRIC_PATTERNS:
-        if pattern.search(bullet):
-            return True
-    return False
+    return any(pattern.search(bullet) for pattern in METRIC_PATTERNS)
 
 
 def _has_proper_length(bullet: str) -> bool:

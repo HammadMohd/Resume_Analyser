@@ -45,9 +45,15 @@ class MatchResult(BaseModel):
     bm25_score: float = Field(0.0, description="BM25 component score (0-100)")
     embedding_score: float = Field(0.0, description="Embedding component score (0-100)")
     bm25_result: BM25Result = Field(default_factory=BM25Result, description="Detailed BM25 result")
-    embedding_result: EmbeddingResult = Field(default_factory=EmbeddingResult, description="Detailed embedding result")
-    skill_matches: list[SkillMatch] = Field(default_factory=list, description="Skill-by-skill matches")
+    embedding_result: EmbeddingResult = Field(
+        default_factory=EmbeddingResult, description="Detailed embedding result"
+    )
+    skill_matches: list[SkillMatch] = Field(
+        default_factory=list, description="Skill-by-skill matches"
+    )
     matching_skills: list[str] = Field(default_factory=list, description="Skills found in both")
-    missing_skills: list[str] = Field(default_factory=list, description="Skills in JD but not resume")
+    missing_skills: list[str] = Field(
+        default_factory=list, description="Skills in JD but not resume"
+    )
     extra_skills: list[str] = Field(default_factory=list, description="Skills in resume but not JD")
     match_time_ms: float = Field(0, description="Time taken (ms)")

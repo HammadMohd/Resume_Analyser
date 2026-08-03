@@ -1,6 +1,5 @@
 """Tests for frontend static file serving."""
 
-import pytest
 from fastapi.testclient import TestClient
 
 

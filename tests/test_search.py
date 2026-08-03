@@ -3,26 +3,20 @@
 Tests BM25 search, embedding search, hybrid matching, and endpoints.
 """
 
-import io
-from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
-from backend.search.bm25_search import BM25Search
-from backend.search.embedding_search import EmbeddingSearch
-from backend.search.hybrid_search import HybridSearch
+from backend.schemas.jd import JDSkill, JobDescription
 from backend.schemas.resume import (
-    ContactInfo,
-    Education,
     Experience,
     NormalizedResume,
     SkillCategory,
 )
-from backend.schemas.jd import JobDescription, JDSkill, JDExperience
 from backend.schemas.search import MatchResult
-
+from backend.search.bm25_search import BM25Search
+from backend.search.embedding_search import EmbeddingSearch
+from backend.search.hybrid_search import HybridSearch
 
 # ── BM25 Search Tests ───────────────────────────────────────────────
 

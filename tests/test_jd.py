@@ -4,17 +4,14 @@ Tests JD skill extraction, experience parsing, and the parse endpoints.
 """
 
 import io
-from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
 
-from backend.main import app
-from backend.jd.skill_extractor import JDSkillExtractor
 from backend.jd.experience_parser import JDExperienceParser
 from backend.jd.jd_parser import JDParser
+from backend.jd.skill_extractor import JDSkillExtractor
+from backend.main import app
 from backend.schemas.jd import JobDescription
-
 
 # ── JD Skill Extractor Tests ────────────────────────────────────────
 
@@ -166,7 +163,7 @@ class TestJDSchema:
         assert jd.skills == []
 
     def test_full_jd(self):
-        from backend.schemas.jd import JDSkill, JDExperience
+        from backend.schemas.jd import JDExperience, JDSkill
         jd = JobDescription(
             title="Engineer",
             skills=[JDSkill(name="python")],

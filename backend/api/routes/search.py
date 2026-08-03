@@ -58,8 +58,8 @@ async def match_resume_to_jd(
 
         # If PDF/DOCX, parse it
         if jd.filename and (jd.filename.endswith(".pdf") or jd.filename.endswith(".docx")):
-            import tempfile
             import os
+            import tempfile
 
             suffix = ".pdf" if jd.filename.endswith(".pdf") else ".docx"
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:

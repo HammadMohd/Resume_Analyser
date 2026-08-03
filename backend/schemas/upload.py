@@ -15,7 +15,7 @@ NOT responsible for:
     - HTTP status codes or headers
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 

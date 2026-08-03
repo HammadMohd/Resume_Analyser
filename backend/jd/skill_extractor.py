@@ -15,7 +15,7 @@ NOT responsible for:
 
 import re
 
-from backend.parser.skills_extractor import SKILL_DATABASE, ALL_SKILLS
+from backend.parser.skills_extractor import ALL_SKILLS, SKILL_DATABASE
 from backend.schemas.jd import JDSkill
 from backend.utils.logging import get_logger
 

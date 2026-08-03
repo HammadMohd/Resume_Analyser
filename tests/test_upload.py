@@ -1,6 +1,5 @@
 """Integration tests for resume upload endpoint."""
 
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -22,7 +21,8 @@ class TestUploadEndpoint:
 
     def test_valid_docx_upload(self, client: TestClient):
         """Valid DOCX should return 200 with metadata."""
-        files = {"file": ("resume.docx", b"PK content", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
+        docx_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        files = {"file": ("resume.docx", b"PK content", docx_mime)}
         response = client.post("/api/v1/resumes/", files=files)
         assert response.status_code == 200
         data = response.json()

@@ -43,7 +43,9 @@ def score_experience(resume: NormalizedResume, jd: JobDescription) -> ScoreDetai
     if jd_years > 0:
         if resume_years >= jd_years:
             score += 60
-            reasoning.append(f"✓ Experience requirement met: {resume_years} years >= {jd_years} required")
+            reasoning.append(
+                f"✓ Experience requirement met: {resume_years} years >= {jd_years} required"
+            )
             # Bonus for exceeding
             if resume_years > jd_years * 1.5:
                 score += 10
@@ -52,7 +54,9 @@ def score_experience(resume: NormalizedResume, jd: JobDescription) -> ScoreDetai
             deficit = jd_years - resume_years
             partial = max(0, 60 - (deficit * 15))
             score += partial
-            reasoning.append(f"✗ Experience below requirement: {resume_years} years vs {jd_years} required")
+            reasoning.append(
+                f"✗ Experience below requirement: {resume_years} years vs {jd_years} required"
+            )
     else:
         score += 30  # Default if no requirement specified
         reasoning.append("No specific years requirement in JD")

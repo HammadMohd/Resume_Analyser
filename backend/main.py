@@ -1,19 +1,19 @@
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.api.routes.resume import router as resume_router
 from backend.api.routes.jd import router as jd_router
-from backend.api.routes.search import router as search_router
-from backend.api.routes.score import router as score_router
-from backend.api.routes.rewrite import router as rewrite_router
 from backend.api.routes.metrics import router as metrics_router
-from backend.middleware.rate_limit import RateLimitMiddleware
+from backend.api.routes.resume import router as resume_router
+from backend.api.routes.rewrite import router as rewrite_router
+from backend.api.routes.score import router as score_router
+from backend.api.routes.search import router as search_router
 from backend.config.settings import settings
+from backend.middleware.rate_limit import RateLimitMiddleware
 from backend.utils.logging import get_logger, setup_logging
 
 logger = get_logger(__name__)

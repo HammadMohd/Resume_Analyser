@@ -31,10 +31,10 @@ Design principle:
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import JSONResponse
 
-from backend.exceptions import AppException, FileValidationError, FileStorageError
+from backend.exceptions import AppError, FileStorageError, FileValidationError
+from backend.parser.extraction_engine import ExtractionEngine
 from backend.parser.resume_parser import ParseError, ResumeParser
 from backend.parser.structured_parser import StructuredParser
-from backend.parser.extraction_engine import ExtractionEngine
 from backend.rules.rule_engine import RuleEngine
 from backend.schemas.upload import UploadResponse
 from backend.services.upload_service import UploadService
@@ -91,7 +91,7 @@ async def upload_resume(
             content=e.to_dict(),
         )
 
-    except AppException as e:
+    except AppError as e:
         logger.error("Application error for %s: %s", file.filename, e.message)
         return JSONResponse(
             status_code=e.status_code,

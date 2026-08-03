@@ -6,7 +6,6 @@ This router owns all JD-related endpoints under /api/v1/jd.
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 
-from backend.exceptions import FileValidationError
 from backend.jd.jd_parser import JDParser
 from backend.utils.logging import get_logger
 
@@ -41,8 +40,8 @@ async def parse_job_description(
 
         # If it's a PDF/DOCX, parse it first
         if file.filename and (file.filename.endswith(".pdf") or file.filename.endswith(".docx")):
-            import tempfile
             import os
+            import tempfile
 
             # Save to temp file
             suffix = ".pdf" if file.filename.endswith(".pdf") else ".docx"

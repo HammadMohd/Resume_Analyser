@@ -93,7 +93,7 @@ class EmbeddingSearch:
             vec1 = vec1 + [0.0] * (max_len - len(vec1))
             vec2 = vec2 + [0.0] * (max_len - len(vec2))
 
-        dot_product = sum(a * b for a, b in zip(vec1, vec2))
+        dot_product = sum(a * b for a, b in zip(vec1, vec2, strict=True))
         norm1 = math.sqrt(sum(a * a for a in vec1))
         norm2 = math.sqrt(sum(b * b for b in vec2))
 

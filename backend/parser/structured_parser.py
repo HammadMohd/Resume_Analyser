@@ -160,7 +160,11 @@ class StructuredParser:
         if section_text:
             for line in section_text.split("\n"):
                 stripped = line.strip()
-                if stripped and not EMAIL_PATTERN.search(stripped) and not PHONE_PATTERN.search(stripped):
+                if (
+                    stripped
+                    and not EMAIL_PATTERN.search(stripped)
+                    and not PHONE_PATTERN.search(stripped)
+                ):
                     name = stripped
                     break
 

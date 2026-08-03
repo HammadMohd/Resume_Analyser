@@ -23,7 +23,7 @@ Architecture position:
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import UploadFile
 
@@ -98,7 +98,7 @@ class UploadService:
             "stored_filename": stored_path.name,
             "content_type": file.content_type or "application/octet-stream",
             "size_bytes": file_size,
-            "upload_timestamp": datetime.now(timezone.utc),
+            "upload_timestamp": datetime.now(UTC),
         }
 
         logger.info("Upload completed successfully: %s (ID: %s)", file.filename, metadata["id"])
