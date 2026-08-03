@@ -52,7 +52,7 @@ async def parse_job_description(
 
             try:
                 parsed = parser.parse(tmp_path, file.filename)
-                text = parsed.raw_text
+                text = parsed.full_text
             finally:
                 os.unlink(tmp_path)
 

@@ -209,7 +209,7 @@ async def normalize_resume(
 
         # Step 3: Normalize into structured format
         normalized = structured_parser.parse_resume(
-            text=parsed.raw_text,
+            text=parsed.full_text,
             filename=file.filename or "unknown",
         )
 
@@ -283,13 +283,13 @@ async def extract_entities(
 
         # Step 3: Normalize into structured format
         normalized = structured_parser.parse_resume(
-            text=parsed.raw_text,
+            text=parsed.full_text,
             filename=file.filename or "unknown",
         )
 
         # Step 4: Extract entities and skills
         extraction_result = extraction_engine.extract(
-            text=parsed.raw_text,
+            text=parsed.full_text,
             filename=file.filename or "unknown",
         )
 
@@ -364,7 +364,7 @@ async def validate_resume(
 
         # Step 3: Normalize into structured format
         normalized = structured_parser.parse_resume(
-            text=parsed.raw_text,
+            text=parsed.full_text,
             filename=file.filename or "unknown",
         )
 

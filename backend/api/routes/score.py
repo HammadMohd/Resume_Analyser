@@ -48,7 +48,7 @@ async def analyze_resume(
         file_path = f"uploads/resumes/{stored_filename}"
         parsed_resume = parser.parse(file_path, resume.filename or "unknown")
         normalized_resume = structured_parser.parse_resume(
-            text=parsed_resume.raw_text,
+            text=parsed_resume.full_text,
             filename=resume.filename or "unknown",
         )
 
@@ -68,7 +68,7 @@ async def analyze_resume(
 
             try:
                 parsed_jd = parser.parse(tmp_path, jd.filename)
-                jd_text = parsed_jd.raw_text
+                jd_text = parsed_jd.full_text
             finally:
                 os.unlink(tmp_path)
 
