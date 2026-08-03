@@ -172,7 +172,7 @@ class ATSScorer:
         if jd.education:
             required_fields = [e.field.lower() for e in jd.education if e.required]
             if required_fields:
-                resume_fields = [e.field.lower() for e in resume.education]
+                resume_fields = [e.field_of_study.lower() for e in resume.education]
                 matched = any(f in " ".join(resume_fields) for f in required_fields)
                 if matched:
                     score = 100

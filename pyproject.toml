@@ -110,10 +110,14 @@ ignore = [
 
 [tool.mypy]
 python_version = "3.11"
+plugins = ["pydantic.mypy"]
 ignore_missing_imports = true
-# Strict mode disabled - Pydantic models with optional fields
-# cause many false positives. Tests verify correctness.
 strict = false
+
+[tool.pydantic-mypy]
+init_forbid_extra = false
+init_typed = false
+warn_required_dynamic_aliases = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

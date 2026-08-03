@@ -158,6 +158,7 @@ class JDParser:
                             degree=self._infer_degree(field),
                             field=field,
                             required=True,
+                            raw_text=field,
                         )
                     )
 

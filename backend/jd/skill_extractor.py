@@ -112,6 +112,7 @@ class JDSkillExtractor:
                     found.append(
                         JDSkill(
                             name=skill,
+                            required=True,
                             category=category,
                             confidence=min(1.0, len(matches) * 0.3 + 0.5),
                         )

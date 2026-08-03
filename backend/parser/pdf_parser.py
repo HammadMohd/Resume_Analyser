@@ -82,6 +82,8 @@ class PDFParser:
                         ),
                         font_name=word.get("fontname"),
                         font_size=self._estimate_font_size(word),
+                        is_bold=False,
+                        is_header=False,
                     )
                     text_blocks.append(block)
 
@@ -100,6 +102,7 @@ class PDFParser:
             pages=pages,
             full_text="\n".join(full_text_parts),
             parser_used="pdfplumber",
+            parsing_time_ms=0,
         )
 
     def _parse_with_pymupdf(self, file_path: str, filename: str) -> ParsedResume:
@@ -152,6 +155,7 @@ class PDFParser:
             pages=pages,
             full_text="\n".join(full_text_parts),
             parser_used="pymupdf",
+            parsing_time_ms=0,
         )
 
     @staticmethod

@@ -15,6 +15,7 @@ NOT responsible for:
 """
 
 import re
+from typing import Any
 
 from backend.utils.logging import get_logger
 
@@ -188,7 +189,7 @@ JOB_TITLE_WORDS = {
 class NERExtractor:
     """Extract named entities from resume text."""
 
-    def extract_entities(self, text: str) -> dict:
+    def extract_entities(self, text: str) -> dict[str, Any]:
         """Extract all entities from text.
 
         Args:
@@ -197,17 +198,22 @@ class NERExtractor:
         Returns:
             Dict with keys: emails, phones, urls, linkedin, github, dates.
         """
-        entities = {
+        str_lists: dict[str, list[str]] = {
             "emails": self.extract_emails(text),
             "phones": self.extract_phones(text),
             "urls": self.extract_urls(text),
             "linkedin": self.extract_linkedin(text),
             "github": self.extract_github(text),
-            "dates": self.extract_dates(text),
         }
+        date_list = self.extract_dates(text)
 
-        logger.info("Extracted entities: %s", {k: len(v) for k, v in entities.items()})
-        return entities
+        counts: dict[str, int] = {k: len(v) for k, v in str_lists.items()}
+        counts["dates"] = len(date_list)
+        logger.info("Extracted entities: %s", counts)
+
+        result: dict[str, Any] = dict(str_lists)
+        result["dates"] = date_list
+        return result
 
     def extract_emails(self, text: str) -> list[str]:
         """Extract email addresses."""
@@ -231,7 +237,7 @@ class NERExtractor:
         """Extract GitHub profile URLs."""
         return list(set(GITHUB_RE.findall(text)))
 
-    def extract_dates(self, text: str) -> list[dict]:
+    def extract_dates(self, text: str) -> list[dict[str, str]]:
         """Extract date ranges from text.
 
         Returns:

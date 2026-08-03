@@ -80,7 +80,9 @@ class StructuredParser:
 
         resume = NormalizedResume(
             filename=filename,
+            summary="",
             raw_text=text,
+            normalization_time_ms=0,
         )
 
         # Extract each section
@@ -91,6 +93,7 @@ class StructuredParser:
                     section_type=section["type"],
                     title=section["title"],
                     content=section_text,
+                    confidence=1.0,
                 )
             )
 
@@ -176,6 +179,7 @@ class StructuredParser:
             linkedin=linkedin,
             github=github,
             location=location,
+            website="",
         )
 
     def _parse_experience(self, text: str) -> list[Experience]:
@@ -201,7 +205,14 @@ class StructuredParser:
                 if current:
                     entries.append(current)
 
-                current = Experience()
+                current = Experience(
+                    company="",
+                    title="",
+                    location="",
+                    start_date=date_match.group(1) if date_match else "",
+                    end_date=date_match.group(2) if date_match else "",
+                    description="",
+                )
                 current.start_date = date_match.group(1) if date_match else ""
                 current.end_date = date_match.group(2) if date_match else ""
 
@@ -268,7 +279,15 @@ class StructuredParser:
                 if current:
                     entries.append(current)
 
-                current = Education()
+                current = Education(
+                    institution="",
+                    degree="",
+                    field_of_study="",
+                    start_date=date_match.group(1) if date_match else "",
+                    end_date=date_match.group(2) if date_match else "",
+                    gpa="",
+                    description="",
+                )
                 current.start_date = date_match.group(1) if date_match else ""
                 current.end_date = date_match.group(2) if date_match else ""
 
@@ -367,7 +386,7 @@ class StructuredParser:
             if current:
                 entries.append(current)
 
-            current = Project(name=stripped)
+            current = Project(name=stripped, description="", url="")
 
         if current:
             entries.append(current)

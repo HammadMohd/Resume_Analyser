@@ -47,7 +47,7 @@ class JobDescription(BaseModel):
     description: str = Field("", description="Full job description text")
     skills: list[JDSkill] = Field(default_factory=list, description="Required/preferred skills")
     experience: JDExperience = Field(
-        default_factory=JDExperience, description="Experience requirements"
+        default_factory=lambda: JDExperience(), description="Experience requirements"
     )
     education: list[JDEducation] = Field(default_factory=list, description="Education requirements")
     keywords: list[str] = Field(default_factory=list, description="Important keywords")

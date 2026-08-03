@@ -58,7 +58,7 @@ class OCRParser:
 
             # Convert page to image
             pix = page.get_pixmap(dpi=300)
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
 
             # Run OCR
             text = pytesseract.image_to_string(img)

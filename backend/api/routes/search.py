@@ -67,15 +67,15 @@ async def match_resume_to_jd(
                 tmp_path = tmp.name
 
             try:
-                parsed_jd = parser.parse(tmp_path, jd.filename)
-                jd_text = parsed_jd.full_text
+                parsed_jd_file = parser.parse(tmp_path, jd.filename)
+                jd_text = parsed_jd_file.full_text
             finally:
                 os.unlink(tmp_path)
 
-        parsed_jd = jd_parser.parse(jd_text, title=jd.filename or "")
+        jd_result = jd_parser.parse(jd_text, title=jd.filename or "")
 
         # Match
-        match_result = search.match(normalized_resume, parsed_jd)
+        match_result = search.match(normalized_resume, jd_result)
 
         return JSONResponse(
             status_code=200,

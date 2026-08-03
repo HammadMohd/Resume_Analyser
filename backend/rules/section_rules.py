@@ -18,20 +18,29 @@ Scoring:
 - Summary present: 10 points
 """
 
+from typing import TypedDict
+
 from backend.schemas.resume import NormalizedResume
 from backend.schemas.rules import Issue, RuleOutput
 from backend.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+
+class _SectionConfig(TypedDict):
+    weight: int
+    severity: str
+    name: str
+
+
 # Required sections with their weights
-REQUIRED_SECTIONS = {
+REQUIRED_SECTIONS: dict[str, _SectionConfig] = {
     "experience": {"weight": 35, "severity": "error", "name": "Work Experience"},
     "skills": {"weight": 30, "severity": "error", "name": "Skills"},
     "education": {"weight": 25, "severity": "error", "name": "Education"},
 }
 
-RECOMMENDED_SECTIONS = {
+RECOMMENDED_SECTIONS: dict[str, _SectionConfig] = {
     "summary": {"weight": 10, "severity": "warning", "name": "Professional Summary"},
 }
 

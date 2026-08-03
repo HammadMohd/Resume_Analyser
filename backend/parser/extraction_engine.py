@@ -51,6 +51,7 @@ class ExtractionEngine:
 
         result = ExtractionResult(
             filename=filename,
+            extraction_time_ms=0,
             raw_text=text,
         )
 
@@ -65,17 +66,27 @@ class ExtractionEngine:
 
             # Convert to ExtractedEntity objects
             for email in result.emails:
-                result.entities.append(ExtractedEntity(type="email", value=email, confidence=1.0))
+                result.entities.append(
+                    ExtractedEntity(type="email", value=email, confidence=1.0, context="")
+                )
             for phone in result.phones:
-                result.entities.append(ExtractedEntity(type="phone", value=phone, confidence=1.0))
+                result.entities.append(
+                    ExtractedEntity(type="phone", value=phone, confidence=1.0, context="")
+                )
             for url in result.urls:
-                result.entities.append(ExtractedEntity(type="url", value=url, confidence=1.0))
+                result.entities.append(
+                    ExtractedEntity(type="url", value=url, confidence=1.0, context="")
+                )
             for linkedin in result.linkedin:
                 result.entities.append(
-                    ExtractedEntity(type="linkedin", value=linkedin, confidence=1.0)
+                    ExtractedEntity(
+                        type="linkedin", value=linkedin, confidence=1.0, context=""
+                    )
                 )
             for github in result.github:
-                result.entities.append(ExtractedEntity(type="github", value=github, confidence=1.0))
+                result.entities.append(
+                    ExtractedEntity(type="github", value=github, confidence=1.0, context="")
+                )
 
             # Extract dates
             raw_dates = ner_entities.get("dates", [])
@@ -85,6 +96,7 @@ class ExtractionEngine:
                         start=d.get("start", ""),
                         end=d.get("end", ""),
                         raw=d.get("raw", ""),
+                        context="",
                     )
                 )
         except Exception as e:
@@ -101,6 +113,7 @@ class ExtractionEngine:
                         category=s["category"],
                         proficiency=proficiency,
                         confidence=s["confidence"],
+                        mentions=1,
                     )
                 )
 

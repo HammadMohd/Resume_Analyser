@@ -142,7 +142,7 @@ class EmbeddingSearch:
         vocab_size = len(vocab)
 
         # Create TF vector
-        tf = {}
+        tf: dict[str, int] = {}
         for term in terms:
             tf[term] = tf.get(term, 0) + 1
 

@@ -44,9 +44,11 @@ class MatchResult(BaseModel):
     overall_score: float = Field(0.0, description="Combined match score (0-100)")
     bm25_score: float = Field(0.0, description="BM25 component score (0-100)")
     embedding_score: float = Field(0.0, description="Embedding component score (0-100)")
-    bm25_result: BM25Result = Field(default_factory=BM25Result, description="Detailed BM25 result")
+    bm25_result: BM25Result = Field(
+        default_factory=lambda: BM25Result(), description="Detailed BM25 result"
+    )
     embedding_result: EmbeddingResult = Field(
-        default_factory=EmbeddingResult, description="Detailed embedding result"
+        default_factory=lambda: EmbeddingResult(), description="Detailed embedding result"
     )
     skill_matches: list[SkillMatch] = Field(
         default_factory=list, description="Skill-by-skill matches"

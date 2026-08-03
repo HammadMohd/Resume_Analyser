@@ -92,7 +92,9 @@ class NormalizedResume(BaseModel):
     """
 
     filename: str = Field(..., description="Original filename")
-    contact: ContactInfo = Field(default_factory=ContactInfo, description="Contact information")
+    contact: ContactInfo = Field(
+        default_factory=lambda: ContactInfo(), description="Contact information"
+    )
     summary: str = Field("", description="Professional summary/objective")
     experience: list[Experience] = Field(default_factory=list, description="Work experience")
     education: list[Education] = Field(default_factory=list, description="Education history")

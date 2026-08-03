@@ -47,7 +47,8 @@ class DOCXParser:
             if not para.text.strip():
                 continue
 
-            is_header = para.style.name.startswith("Heading")
+            style_name = para.style.name if para.style is not None else ""
+            is_header = style_name.startswith("Heading")
             is_bold = any(run.bold for run in para.runs if run.bold is not None)
             font_name = None
             font_size = None
@@ -62,6 +63,7 @@ class DOCXParser:
             block = TextBlock(
                 text=para.text,
                 page=1,  # DOCX doesn't have page numbers
+                bbox=None,
                 font_name=font_name,
                 font_size=font_size,
                 is_bold=is_bold,
@@ -74,6 +76,8 @@ class DOCXParser:
             page_number=1,
             text="\n".join(full_text_parts),
             text_blocks=text_blocks,
+            width=None,
+            height=None,
         )
 
         result = ParsedResume(
