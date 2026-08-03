@@ -15,9 +15,6 @@ Usage:
 
 from pathlib import Path
 
-from backend.parser.docx_parser import DOCXParser
-from backend.parser.ocr_parser import OCRParser
-from backend.parser.pdf_parser import PDFParser
 from backend.schemas.parsed import ParsedResume
 from backend.utils.logging import get_logger
 
@@ -33,12 +30,43 @@ class ParseError(Exception):
 
 
 class ResumeParser:
-    """Parse resumes of different formats."""
+    """Parse resumes of different formats.
+
+    Parser instances are lazily imported and created on first use
+    to avoid loading heavy third-party libraries at startup.
+    """
 
     def __init__(self) -> None:
-        self.pdf_parser = PDFParser()
-        self.docx_parser = DOCXParser()
-        self.ocr_parser = OCRParser()
+        self._pdf_parser = None
+        self._docx_parser = None
+        self._ocr_parser = None
+
+    @property
+    def pdf_parser(self):
+        """Lazy-load PDF parser."""
+        if self._pdf_parser is None:
+            from backend.parser.pdf_parser import PDFParser
+
+            self._pdf_parser = PDFParser()
+        return self._pdf_parser
+
+    @property
+    def docx_parser(self):
+        """Lazy-load DOCX parser."""
+        if self._docx_parser is None:
+            from backend.parser.docx_parser import DOCXParser
+
+            self._docx_parser = DOCXParser()
+        return self._docx_parser
+
+    @property
+    def ocr_parser(self):
+        """Lazy-load OCR parser."""
+        if self._ocr_parser is None:
+            from backend.parser.ocr_parser import OCRParser
+
+            self._ocr_parser = OCRParser()
+        return self._ocr_parser
 
     def parse(self, file_path: str, filename: str) -> ParsedResume:
         """Parse a resume file and return structured content.

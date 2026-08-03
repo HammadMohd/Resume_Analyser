@@ -9,15 +9,9 @@ RUN apt-get update && \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Copy project definition first for better caching
 COPY pyproject.toml .
-RUN pip install --no-cache-dir --prefix=/install \
-    "fastapi[standard]>=0.115.0" \
-    pydantic \
-    pydantic-settings \
-    python-dotenv \
-    python-multipart \
-    uvicorn
+RUN pip install --no-cache-dir --prefix=/install .
 
 # Stage 2: Production image
 FROM python:3.11-slim AS production

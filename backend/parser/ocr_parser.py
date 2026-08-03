@@ -22,10 +22,6 @@ Note:
 
 import time
 
-import pymupdf
-import pytesseract
-from PIL import Image
-
 from backend.schemas.parsed import ParsedPage, ParsedResume
 from backend.utils.logging import get_logger
 
@@ -45,6 +41,10 @@ class OCRParser:
         Returns:
             ParsedResume with OCR-extracted content.
         """
+        import pymupdf
+        import pytesseract
+        from PIL import Image
+
         start = time.time()
         logger.info("Starting OCR parse: %s", filename)
 
