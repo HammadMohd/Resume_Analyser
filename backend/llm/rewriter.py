@@ -4,7 +4,7 @@ This module coordinates prompt building, LLM calls, and output
 validation to produce improved bullet points.
 
 Supports two modes:
-1. Full mode: Uses OpenAI API (requires API key)
+1. Full mode: Uses Google Gemini API (free tier available)
 2. Rule-based mode: Applies improvements without LLM (fallback)
 """
 
@@ -78,9 +78,11 @@ class BulletRewriter:
         )
 
     def _rewrite_with_llm(self, request: BulletRewriteRequest) -> BulletRewriteResponse:
-        """Rewrite using OpenAI API."""
+        """Rewrite using Google Gemini API."""
         try:
-            import openai
+            import google.generativeai as genai
+
+            from backend.config.settings import settings
 
             prompt = build_bullet_rewrite_prompt(
                 original=request.original,
@@ -88,16 +90,17 @@ class BulletRewriter:
                 missing_skills=request.missing_skills,
             )
 
-            client = openai.OpenAI()
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_tokens=200,
-            )
+            genai.configure(api_key=settings.gemini_api_key)
+            model = genai.GenerativeModel("gemini-2.0-flash")
+            response = model.generate_content(prompt)
 
-            content = response.choices[0].message.content
-            result = json.loads(content)
+            content = response.text
+            # Extract JSON from response (may have markdown code blocks)
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+            if json_match:
+                result = json.loads(json_match.group())
+            else:
+                result = {"improved": content, "changes_made": [], "confidence": 0.5}
 
             # Validate
             validation = validate_bullet_rewrite(
