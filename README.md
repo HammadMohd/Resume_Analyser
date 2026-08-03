@@ -14,19 +14,32 @@ Client → Upload → Validate → Store → Parse → Extract → Score → LLM
 
 ## Quick Start
 
-```bash
-# Clone and setup
-git clone <repo-url>
-cd Resume_Analyser
-python -m venv .venv
-.venv\Scripts\activate
-pip install "fastapi[standard]"
+## Quick Start
 
-# Run server
+```bash
+# Clone the repository
+git clone https://github.com/HammadMohd/Resume_Analyser.git
+
+# Go into the project
+cd Resume_Analyser
+
+# Create a virtual environment
+python -m venv .venv
+
+# Activate it (Windows)
+.venv\Scripts\activate
+
+# Activate it (Linux/macOS)
+source .venv/bin/activate
+
+# Install the project
+pip install -e ".[dev]"
+
+# Run the FastAPI server
 fastapi dev backend/main.py
 
-# Run tests
-python -m pytest tests/ -v
+# Run the tests
+pytest tests -v
 ```
 
 ## API Endpoints

@@ -2,59 +2,71 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [master, main]
+    branches:
+      - main
+      - master
+
   pull_request:
-    branches: [master, main]
+    branches:
+      - main
+      - master
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          
+          python-version: "3.12"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-          
-      - name: Run linter
-        run: ruff check backend/ tests/
-        
-      - name: Run type checker
-        run: mypy backend/ --ignore-missing-imports
-        
-      - name: Run tests
-        run: python -m pytest tests/ -v --tb=short
-        
-      - name: Upload coverage
+          pip install pytest-cov
+
+      - name: Run Ruff
+        run: |
+          ruff check backend tests
+
+      - name: Run MyPy
+        run: |
+          mypy backend --ignore-missing-imports
+
+      - name: Run Tests
+        run: |
+          pytest tests -v --tb=short --cov=backend --cov-report=xml
+
+      - name: Upload Coverage
         uses: codecov/codecov-action@v4
         with:
-          file: ./coverage.xml
+          file: coverage.xml
 
   build:
     needs: test
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
-      - name: Build and push
+
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -63,5 +75,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/resume-analyzer:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/resume-analyzer:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
