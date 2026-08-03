@@ -25,9 +25,9 @@ EMAIL_RE = re.compile(
     r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 )
 
-# Phone patterns
+# Phone patterns - supports international formats
 PHONE_RE = re.compile(
-    r"(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}"
+    r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}"
 )
 
 # URL patterns
@@ -35,14 +35,14 @@ URL_RE = re.compile(
     r"https?://[^\s<>\"']+|www\.[^\s<>\"']+"
 )
 
-# LinkedIn
+# LinkedIn - multiple formats
 LINKEDIN_RE = re.compile(
-    r"linkedin\.com/in/[a-zA-Z0-9_-]+", re.IGNORECASE
+    r"(?:https?://(?:www\.)?)?linkedin\.com/(?:in|profile)/[a-zA-Z0-9_-]+", re.IGNORECASE
 )
 
-# GitHub
+# GitHub - multiple formats
 GITHUB_RE = re.compile(
-    r"github\.com/[a-zA-Z0-9_-]+", re.IGNORECASE
+    r"(?:https?://(?:www\.)?)?github\.com/[a-zA-Z0-9_-]+", re.IGNORECASE
 )
 
 # Date patterns
