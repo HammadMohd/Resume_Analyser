@@ -53,3 +53,7 @@ models/*.bin
 models/*.pt
 models/*.onnx
 models/*.pkl
+
+# Project docs (not for GitHub)
+AGENT.md
+project_plan.md
