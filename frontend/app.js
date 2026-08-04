@@ -215,10 +215,10 @@ function showResults(scoring, validation, extracted, bullets, jdText) {
     const validationData = validation?.data?.validation || {};
     const scoringData = scoring?.data || {};
 
-    renderScoreChart(scoringData.ats_score, scoringData.overall_grade);
-    renderRecommendations(scoringData.recommendations);
+    renderScoreChart(scoringData.overall_score, scoringData.overall_grade);
+    renderRecommendations(scoringData.recommendations, scoringData.missing_skills);
     renderBreakdown(scoringData.breakdown, jdText);
-    renderExtractedSkills(extractionData);
+    renderExtractedSkills(extractionData, scoringData);
     renderContactInfo(extractionData);
     renderValidation(validationData);
     renderBullets(bullets);
@@ -289,11 +289,16 @@ function renderScoreChart(score, grade) {
     });
 }
 
-function renderRecommendations(recs) {
+function renderRecommendations(recs, missingSkills) {
     const card = document.getElementById('recs-card');
     const list = document.getElementById('recs-list');
 
-    if (!recs || recs.length === 0) {
+    const allRecs = [...(recs || [])];
+    if (missingSkills && missingSkills.length > 0) {
+        allRecs.push(`Add these skills from the job description: ${missingSkills.join(', ')}`);
+    }
+
+    if (allRecs.length === 0) {
         card.style.display = 'none';
         return;
     }
@@ -301,7 +306,7 @@ function renderRecommendations(recs) {
     card.style.display = 'block';
     list.innerHTML = '';
 
-    recs.forEach(rec => {
+    allRecs.forEach(rec => {
         const li = document.createElement('li');
         li.textContent = rec;
         list.appendChild(li);
@@ -331,7 +336,10 @@ function renderBreakdown(breakdown, jdText) {
 
     for (const [key, catLabel] of Object.entries(categories)) {
         if (breakdown[key] !== undefined) {
-            const val = typeof breakdown[key] === 'number' ? breakdown[key] : 0;
+            const detail = breakdown[key];
+            const val = typeof detail === 'object' && detail !== null
+                ? (detail.score || 0)
+                : (typeof detail === 'number' ? detail : 0);
             const color = val >= 70 ? '#22c55e' : val >= 40 ? '#f59e0b' : '#ef4444';
 
             const item = document.createElement('div');
@@ -350,11 +358,14 @@ function renderBreakdown(breakdown, jdText) {
     }
 }
 
-function renderExtractedSkills(extractionData) {
+function renderExtractedSkills(extractionData, scoringData) {
     const card = document.getElementById('skills-card');
     const extractedSection = document.getElementById('extracted-skills-section');
+    const matchedSection = document.getElementById('matched-skills-section');
+    const missingSection = document.getElementById('missing-skills-section');
 
     const skills = extractionData.skills || [];
+    const missingSkills = scoringData?.missing_skills || [];
 
     if (skills.length === 0) {
         card.style.display = 'none';
@@ -362,15 +373,45 @@ function renderExtractedSkills(extractionData) {
     }
 
     card.style.display = 'block';
+
+    // Extracted skills
     extractedSection.innerHTML = '<h4>Extracted Skills</h4><div class="skills-tags"></div>';
     const tagsContainer = extractedSection.querySelector('.skills-tags');
-
     skills.forEach(skill => {
         const tag = document.createElement('span');
         tag.className = 'skill-tag extracted';
         tag.textContent = skill.name || skill;
         tagsContainer.appendChild(tag);
     });
+
+    // Matched skills (skills in both resume and JD)
+    if (scoringData && missingSkills.length >= 0) {
+        const resumeSkillNames = skills.map(s => (s.name || s).toLowerCase());
+        const allJdSkills = scoringData.breakdown?.skills?.reasoning || [];
+
+        // Find matched: resume skills that appear in JD
+        const matched = [];
+        const resumeSet = new Set(resumeSkillNames);
+        // Use the scoring data to infer matched skills
+        // If a skill is not in missing_skills, it's matched
+        // But we need the full JD skill list. We can infer from breakdown reasoning.
+        // Simpler: just show missing skills from scoring
+    }
+
+    // Missing skills (required by JD but not in resume)
+    if (missingSkills.length > 0) {
+        missingSection.style.display = 'block';
+        missingSection.innerHTML = '<h4>Missing Skills (Required by JD)</h4><div class="skills-tags"></div>';
+        const missingTags = missingSection.querySelector('.skills-tags');
+        missingSkills.forEach(skill => {
+            const tag = document.createElement('span');
+            tag.className = 'skill-tag missing';
+            tag.textContent = skill;
+            missingTags.appendChild(tag);
+        });
+    } else {
+        missingSection.style.display = 'none';
+    }
 }
 
 function renderContactInfo(extractionData) {
