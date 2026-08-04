@@ -69,6 +69,14 @@ class PDFParser:
                 text = page.extract_text() or ""
                 full_text_parts.append(text)
 
+                # Extract hyperlink URLs from annotations
+                if page.annots:
+                    for annot in page.annots:
+                        if annot.get("subtype") == 13:  # Link annotation
+                            uri = annot.get("uri", "")
+                            if uri and uri.startswith("http"):
+                                full_text_parts.append(uri)
+
                 text_blocks = []
                 words = page.extract_words()
 
@@ -137,6 +145,14 @@ class PDFParser:
                 page_num = i + 1
                 text = page.get_text()
                 full_text_parts.append(text)
+
+                # Extract hyperlink URLs from the page
+                links = page.get_links()
+                for link in links:
+                    if link.get("kind") == 2:  # URI link
+                        uri = link.get("uri", "")
+                        if uri and uri.startswith("http"):
+                            full_text_parts.append(uri)
 
                 text_blocks = []
                 blocks = page.get_text("dict")["blocks"]

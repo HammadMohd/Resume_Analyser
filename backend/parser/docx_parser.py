@@ -43,6 +43,17 @@ class DOCXParser:
         text_blocks = []
         full_text_parts = []
 
+        # Build hyperlink relationship map (rId -> URL)
+        hyperlink_map = {}
+        try:
+            from docx.opc.constants import RELATIONSHIP_TYPE as RT
+
+            for rel in doc.part.rels.values():
+                if rel.reltype == RT.HYPERLINK:
+                    hyperlink_map[rel.rId] = rel.target_ref
+        except Exception:
+            pass
+
         for para in doc.paragraphs:
             if not para.text.strip():
                 continue
@@ -71,6 +82,19 @@ class DOCXParser:
             )
             text_blocks.append(block)
             full_text_parts.append(para.text)
+
+            # Extract hyperlink URLs from runs
+            for run in para.runs:
+                for child in run._element:
+                    if child.tag.endswith("}hyperlink"):
+                        rel_id = child.get(
+                            "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id",
+                            "",
+                        )
+                        if rel_id and rel_id in hyperlink_map:
+                            url = hyperlink_map[rel_id]
+                            if url.startswith("http"):
+                                full_text_parts.append(url)
 
         parsed_page = ParsedPage(
             page_number=1,
