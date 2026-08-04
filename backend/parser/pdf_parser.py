@@ -15,6 +15,7 @@ NOT responsible for:
     - Layout reconstruction (belongs to layout module)
 """
 
+import statistics
 import time
 
 import pdfplumber
@@ -70,7 +71,26 @@ class PDFParser:
 
                 text_blocks = []
                 words = page.extract_words()
+
+                # Collect font sizes for header detection
+                font_sizes = []
                 for word in words:
+                    height = word.get("bottom", 0) - word.get("top", 0)
+                    if height > 0:
+                        font_sizes.append(round(height * 0.75, 1))
+
+                median_size = (
+                    statistics.median(font_sizes) if font_sizes else 12.0
+                )
+                header_threshold = median_size * 1.3
+
+                for word in words:
+                    height = word.get("bottom", 0) - word.get("top", 0)
+                    font_size = round(height * 0.75, 1) if height > 0 else 12.0
+                    font_name = word.get("fontname", "")
+                    is_bold = self._detect_bold_plumber(font_name)
+                    is_header = font_size >= header_threshold and font_size > 0
+
                     block = TextBlock(
                         text=word["text"],
                         page=page_num,
@@ -80,10 +100,10 @@ class PDFParser:
                             x1=word["x1"],
                             y1=word["bottom"],
                         ),
-                        font_name=word.get("fontname"),
-                        font_size=self._estimate_font_size(word),
-                        is_bold=False,
-                        is_header=False,
+                        font_name=font_name,
+                        font_size=font_size,
+                        is_bold=is_bold,
+                        is_header=is_header,
                     )
                     text_blocks.append(block)
 
@@ -111,44 +131,70 @@ class PDFParser:
         full_text_parts = []
 
         doc = pymupdf.open(file_path)
-        for i in range(len(doc)):
-            page = doc[i]
-            page_num = i + 1
-            text = page.get_text()
-            full_text_parts.append(text)
+        try:
+            for i in range(len(doc)):
+                page = doc[i]
+                page_num = i + 1
+                text = page.get_text()
+                full_text_parts.append(text)
 
-            text_blocks = []
-            blocks = page.get_text("dict")["blocks"]
-            for block in blocks:
-                if block["type"] == 0:  # Text block
-                    for line in block.get("lines", []):
-                        for span in line.get("spans", []):
-                            bbox = span["bbox"]
-                            block_obj = TextBlock(
-                                text=span["text"],
-                                page=page_num,
-                                bbox=BoundingBox(
-                                    x0=bbox[0],
-                                    y0=bbox[1],
-                                    x1=bbox[2],
-                                    y1=bbox[3],
-                                ),
-                                font_name=span.get("font"),
-                                font_size=span.get("size"),
-                                is_bold="Bold" in (span.get("font") or ""),
-                            )
-                            text_blocks.append(block_obj)
+                text_blocks = []
+                blocks = page.get_text("dict")["blocks"]
 
-            parsed_page = ParsedPage(
-                page_number=page_num,
-                text=text,
-                text_blocks=text_blocks,
-                width=float(page.rect.width),
-                height=float(page.rect.height),
-            )
-            pages.append(parsed_page)
+                # Collect font sizes for header detection
+                font_sizes = []
+                for block in blocks:
+                    if block["type"] == 0:
+                        for line in block.get("lines", []):
+                            for span in line.get("spans", []):
+                                sz = span.get("size", 0)
+                                if sz > 0:
+                                    font_sizes.append(sz)
 
-        doc.close()
+                median_size = (
+                    statistics.median(font_sizes) if font_sizes else 12.0
+                )
+                header_threshold = median_size * 1.3
+
+                for block in blocks:
+                    if block["type"] == 0:  # Text block
+                        for line in block.get("lines", []):
+                            for span in line.get("spans", []):
+                                bbox = span["bbox"]
+                                font_name = span.get("font", "")
+                                font_size = span.get("size", 0)
+                                is_bold = "Bold" in font_name
+                                is_header = (
+                                    font_size >= header_threshold and font_size > 0
+                                )
+
+                                block_obj = TextBlock(
+                                    text=span["text"],
+                                    page=page_num,
+                                    bbox=BoundingBox(
+                                        x0=bbox[0],
+                                        y0=bbox[1],
+                                        x1=bbox[2],
+                                        y1=bbox[3],
+                                    ),
+                                    font_name=font_name,
+                                    font_size=font_size,
+                                    is_bold=is_bold,
+                                    is_header=is_header,
+                                )
+                                text_blocks.append(block_obj)
+
+                parsed_page = ParsedPage(
+                    page_number=page_num,
+                    text=text,
+                    text_blocks=text_blocks,
+                    width=float(page.rect.width),
+                    height=float(page.rect.height),
+                )
+                pages.append(parsed_page)
+        finally:
+            doc.close()
+
         return ParsedResume(
             filename=filename,
             total_pages=len(pages),
@@ -157,6 +203,14 @@ class PDFParser:
             parser_used="pymupdf",
             parsing_time_ms=0,
         )
+
+    @staticmethod
+    def _detect_bold_plumber(font_name: str) -> bool:
+        """Detect bold from PDFPlumber font name."""
+        if not font_name:
+            return False
+        lower = font_name.lower()
+        return any(tag in lower for tag in ("bold", "bd", "heavy", "black"))
 
     @staticmethod
     def _estimate_font_size(word: dict) -> float:

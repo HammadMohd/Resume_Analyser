@@ -4,73 +4,182 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume ATS Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Resume ATS Analyzer</h1>
-            <p>Upload your resume to get an ATS compatibility score</p>
+    <div class="app">
+        <header class="hero">
+            <div class="hero-content">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="#6366f1"/>
+                        <path d="M8 10h16M8 16h12M8 22h8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                    <span class="logo-text">ATS Analyzer</span>
+                </div>
+                <h1>Is your resume <span class="gradient-text">ATS-ready</span>?</h1>
+                <p class="hero-sub">Get an instant compatibility score. Identify issues. Fix them before you apply.</p>
+            </div>
         </header>
 
-        <main>
-            <section class="upload-section">
-                <h2>Upload</h2>
-                <div class="upload-box">
-                    <div class="input-group">
-                        <label for="resume-file">Resume (PDF/DOCX):</label>
-                        <input type="file" id="resume-file" accept=".pdf,.docx">
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-card" id="upload-section">
+                <div class="upload-zone" id="drop-zone">
+                    <div class="upload-icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                            <path d="M24 32V16M24 16l-8 8M24 16l8 8" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                     </div>
-                    <div class="input-group">
-                        <label for="jd-text">Job Description (optional):</label>
-                        <textarea id="jd-text" rows="4" placeholder="Paste job description here..."></textarea>
-                    </div>
-                    <button id="analyze-btn" disabled>Analyze</button>
+                    <p class="upload-text">Drag & drop your resume here</p>
+                    <p class="upload-sub">or click to browse</p>
+                    <p class="upload-formats">PDF, DOCX up to 10MB</p>
+                    <input type="file" id="resume-file" accept=".pdf,.docx" class="file-input">
                 </div>
-            </section>
-
-            <section class="loading" id="loading" style="display: none;">
-                <div class="spinner"></div>
-                <p>Analyzing resume...</p>
-            </section>
-
-            <section class="results-section" id="results" style="display: none;">
-                <h2>Results</h2>
-
-                <div class="score-card">
-                    <h3>ATS Score</h3>
-                    <div class="score-chart-container">
-                        <canvas id="score-chart"></canvas>
+                <div class="file-selected" id="file-selected" style="display:none;">
+                    <div class="file-info">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M4 2h8l4 4v12a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="#6366f1" stroke-width="1.5"/>
+                            <path d="M12 2v4h4" stroke="#6366f1" stroke-width="1.5"/>
+                        </svg>
+                        <span id="file-name"></span>
+                        <button class="remove-file" id="remove-file" title="Remove file">&times;</button>
                     </div>
-                    <p id="score-label" class="score-label">--</p>
                 </div>
 
-                <div class="breakdown-card">
-                    <h3>Score Breakdown</h3>
+                <div class="jd-section">
+                    <label class="jd-label" for="jd-text">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <rect x="2" y="1" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M5 5h6M5 8h4M5 11h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        Job Description
+                        <span class="optional-badge">Optional</span>
+                    </label>
+                    <textarea id="jd-text" rows="4" placeholder="Paste the job description to get a targeted ATS score..."></textarea>
+                </div>
+
+                <button id="analyze-btn" disabled class="analyze-btn">
+                    <span class="btn-text">Analyze Resume</span>
+                    <svg class="btn-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </section>
+
+            <!-- Loading -->
+            <div class="loading-overlay" id="loading" style="display:none;">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <p class="loading-title">Analyzing your resume...</p>
+                    <p class="loading-sub" id="loading-status">Extracting content</p>
+                </div>
+            </div>
+
+            <!-- Toast container -->
+            <div id="toast-container"></div>
+
+            <!-- Results -->
+            <section class="results" id="results" style="display:none;">
+
+                <!-- Score Hero -->
+                <div class="score-hero" id="score-hero">
+                    <div class="score-ring-wrap">
+                        <canvas id="score-chart" width="200" height="200"></canvas>
+                        <div class="score-center">
+                            <span class="score-value" id="score-value">--</span>
+                            <span class="score-grade" id="score-grade"></span>
+                        </div>
+                    </div>
+                    <div class="score-meta">
+                        <h2 class="score-title">ATS Compatibility Score</h2>
+                        <p class="score-subtitle" id="score-subtitle">Based on keyword matching, structure, and formatting</p>
+                    </div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="recs-card" id="recs-card" style="display:none;">
+                    <h3 class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <circle cx="9" cy="9" r="8" stroke="#f59e0b" stroke-width="1.5"/>
+                            <path d="M9 5v5M9 12v.5" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        Recommendations
+                    </h3>
+                    <ul id="recs-list"></ul>
+                </div>
+
+                <!-- Breakdown -->
+                <div class="breakdown-card" id="breakdown-card" style="display:none;">
+                    <h3 class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <rect x="1" y="10" width="4" height="7" rx="1" fill="#6366f1"/>
+                            <rect x="7" y="6" width="4" height="11" rx="1" fill="#6366f1" opacity="0.7"/>
+                            <rect x="13" y="2" width="4" height="15" rx="1" fill="#6366f1" opacity="0.4"/>
+                        </svg>
+                        Score Breakdown
+                    </h3>
                     <div id="breakdown"></div>
                 </div>
 
-                <div class="skills-card" id="skills-card" style="display: none;">
-                    <h3>Skills Match</h3>
-                    <div id="skills-match"></div>
-                    <div id="missing-skills"></div>
+                <!-- Skills -->
+                <div class="skills-card" id="skills-card" style="display:none;">
+                    <h3 class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M9 1l2.47 5.01L17 6.64l-4 3.9.94 5.51L9 13.77l-4.94 2.28L5 10.54l-4-3.9 5.53-.63z" stroke="#6366f1" stroke-width="1.5" fill="none"/>
+                        </svg>
+                        Skills Analysis
+                    </h3>
+                    <div class="skills-section" id="extracted-skills-section"></div>
+                    <div class="skills-section" id="matched-skills-section" style="display:none;"></div>
+                    <div class="skills-section" id="missing-skills-section" style="display:none;"></div>
                 </div>
 
-                <div class="bullets-card" id="bullets-card" style="display: none;">
-                    <h3>Bullet Suggestions</h3>
-                    <div id="bullets"></div>
+                <!-- Contact Info -->
+                <div class="contact-card" id="contact-card" style="display:none;">
+                    <h3 class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <rect x="2" y="3" width="14" height="12" rx="2" stroke="#6366f1" stroke-width="1.5"/>
+                            <path d="M2 6l7 4 7-4" stroke="#6366f1" stroke-width="1.5"/>
+                        </svg>
+                        Contact Information
+                    </h3>
+                    <div id="contact-info"></div>
                 </div>
 
-                <div class="validation-card" id="validation-card" style="display: none;">
-                    <h3>Resume Validation</h3>
+                <!-- Validation -->
+                <div class="validation-card" id="validation-card" style="display:none;">
+                    <h3 class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M9 1l7 4v6l-7 4-7-4V5z" stroke="#6366f1" stroke-width="1.5"/>
+                            <path d="M6 9l2 2 4-4" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Resume Validation
+                        <span class="issue-count" id="issue-count" style="display:none;"></span>
+                    </h3>
                     <div id="validation"></div>
+                </div>
+
+                <!-- Bullets -->
+                <div class="bullets-card" id="bullets-card" style="display:none;">
+                    <h3 class="card-title">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 3h12M3 7h10M3 11h8M3 15h6" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        Bullet Suggestions
+                    </h3>
+                    <div id="bullets"></div>
                 </div>
             </section>
         </main>
 
-        <footer>
-            <p>Deterministic-First ATS Analyzer</p>
+        <footer class="footer">
+            <p>Resume ATS Analyzer &mdash; Deterministic-First Analysis</p>
         </footer>
     </div>
 
