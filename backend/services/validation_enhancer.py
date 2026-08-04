@@ -184,4 +184,73 @@ Original bullets:
     except Exception as e:
         logger.warning("Failed to generate bullet examples: %s", e)
 
-    return []
+    return _generate_rule_based_examples(bullets[:5])
+
+
+def _generate_rule_based_examples(bullets: list[str]) -> list[dict]:
+    """Generate improved bullet examples using rules when LLM is unavailable."""
+    import re
+
+    action_verbs = [
+        "Developed", "Implemented", "Built", "Optimized", "Led",
+        "Designed", "Automated", "Streamlined", "Delivered", "Enhanced",
+    ]
+    metric_templates = [
+        "resulting in a {}% improvement",
+        "serving {}+ users",
+        "reducing processing time by {}%",
+        "saving {} hours per week",
+        "handling {}+ records daily",
+    ]
+
+    examples = []
+    for bullet in bullets:
+        improved = bullet
+        changes = []
+
+        # Fix action verb
+        words = bullet.split()
+        if words and words[0].lower() not in _ACTION_VERBS:
+            for verb in action_verbs:
+                if verb.lower() in bullet.lower():
+                    improved = verb + " " + bullet.lower().split(verb.lower(), 1)[-1].strip()
+                    changes.append("action verb")
+                    break
+            else:
+                improved = "Developed " + bullet[0].lower() + bullet[1:]
+                changes.append("action verb")
+
+        # Add metrics placeholder
+        has_metrics = any(
+            p.search(improved)
+            for p in [
+                re.compile(r"\d+%"),
+                re.compile(r"\d+\s*(?:users|records|requests|hours|days|weeks|months)"),
+            ]
+        )
+        if not has_metrics:
+            import random
+            template = random.choice(metric_templates)
+            number = random.choice([25, 30, 40, 50, 100, 200, 500])
+            improved = improved.rstrip(".")
+            improved += f", {template.format(number)}."
+            changes.append("metrics")
+
+        if improved != bullet:
+            examples.append({"original": bullet, "improved": improved})
+
+    return examples[:5]
+
+
+# Action verbs for rule-based fallback
+_ACTION_VERBS = {
+    "achieved", "added", "built", "collaborated", "created", "delivered",
+    "designed", "developed", "drove", "enhanced", "established", "executed",
+    "generated", "grew", "guided", "implemented", "improved", "increased",
+    "initiated", "integrated", "introduced", "launched", "led", "managed",
+    "migrated", "optimized", "orchestrated", "performed", "planned",
+    "produced", "reduced", "refactored", "resolved", "saved", "secured",
+    "simplified", "solved", "standardized", "strengthened", "tested",
+    "trained", "transformed", "updated", "upgraded", "utilized", "verified",
+    "wrote",
+}
