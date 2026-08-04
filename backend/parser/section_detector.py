@@ -113,10 +113,17 @@ class SectionDetector:
         """Classify a line as a section header.
 
         Returns section type if matched, None otherwise.
+        Handles both standalone headers ('Skills') and headers with
+        inline content ('Skills: Python, Java, SQL').
         """
         for section_type, patterns in self._compiled.items():
             for pattern in patterns:
                 if pattern.match(line):
+                    return section_type
+        # Also check if line starts with a known header followed by ':'
+        for section_type, patterns in self._compiled.items():
+            for pattern in patterns:
+                if pattern.match(line.split(":")[0].strip()):
                     return section_type
         return None
 

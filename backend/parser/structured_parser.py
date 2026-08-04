@@ -137,11 +137,24 @@ class StructuredParser:
         return resume
 
     def _get_section_text(self, text: str, section: dict) -> str:
-        """Get text content of a section."""
+        """Get text content of a section.
+
+        Handles both standalone headers and headers with inline content
+        (e.g., 'Skills: Python, Java, SQL' extracts 'Python, Java, SQL').
+        """
         lines = text.split("\n")
         start = section["start"] + 1
         end = section["end"]
-        return "\n".join(lines[start:end]).strip()
+        body = "\n".join(lines[start:end]).strip()
+
+        # If body is empty, check if header line has inline content after ':'
+        header_line = lines[section["start"]].strip()
+        if ":" in header_line and not body:
+            after_colon = header_line.split(":", 1)[1].strip()
+            if after_colon:
+                body = after_colon
+
+        return body
 
     def _parse_contact(self, section_text: str, full_text: str) -> ContactInfo:
         """Extract contact information."""
