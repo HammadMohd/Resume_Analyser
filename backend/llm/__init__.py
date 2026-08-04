@@ -6,9 +6,9 @@ using structured LLM outputs validated with Pydantic.
 Key principle: LLM is the editor, not the decision maker.
 """
 
-import os
+from backend.config.settings import settings
 
 # Check if LLM API key is configured (Gemini or OpenAI)
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+GEMINI_API_KEY = settings.gemini_api_key
+OPENAI_API_KEY = settings.openai_api_key
 LLM_AVAILABLE = bool(GEMINI_API_KEY or OPENAI_API_KEY)
