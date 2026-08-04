@@ -215,7 +215,12 @@ function showResults(scoring, validation, extracted, bullets, jdText) {
     const validationData = validation?.data?.validation || {};
     const scoringData = scoring?.data || {};
 
-    renderScoreChart(scoringData.overall_score, scoringData.overall_grade);
+    // When no JD provided, show validation score in the graph so both
+    // the chart and Resume Validation section display the same number.
+    const graphScore = jdText ? scoringData.overall_score : validationData.overall_score;
+    const graphGrade = jdText ? scoringData.overall_grade : validationData.overall_grade;
+
+    renderScoreChart(graphScore, graphGrade);
     renderRecommendations(scoringData.recommendations, scoringData.missing_skills);
     renderBreakdown(scoringData.breakdown, jdText);
     renderExtractedSkills(extractionData, scoringData);
