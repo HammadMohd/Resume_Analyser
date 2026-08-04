@@ -33,14 +33,30 @@ logger = get_logger(__name__)
 # Email pattern
 EMAIL_PATTERN = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
-# Phone patterns (US formats)
-PHONE_PATTERN = re.compile(r"(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}")
+# Phone patterns - requires country code prefix (+XX or 0), 10 digits, or US 3-3-4 format
+PHONE_PATTERN = re.compile(
+    r"\+\d{1,4}[-.\s]?\d{3,4}[-.\s]?\d{3,4}[-.\s]?\d{3,4}"
+    r"|0\d{10}"
+    r"|\d{10}"
+    r"|\d{3}[-.\s]\d{3}[-.\s]\d{4}"
+    r"|\(\d{3,4}\)[-. ]?\d{3,4}[-.\s]?\d{4}"
+)
 
-# LinkedIn pattern
-LINKEDIN_PATTERN = re.compile(r"linkedin\.com/in/[a-zA-Z0-9_-]+", re.IGNORECASE)
+# LinkedIn pattern - full URLs, short URLs, and bare domain
+LINKEDIN_PATTERN = re.compile(
+    r"(?:https?://(?:www\.)?(?:linkedin\.com/(?:in|profile)/[a-zA-Z0-9_-]+"
+    r"|rb\.gy/[a-zA-Z0-9_-]+))"
+    r"|linkedin\.com/in/[a-zA-Z0-9_-]+",
+    re.IGNORECASE,
+)
 
-# GitHub pattern
-GITHUB_PATTERN = re.compile(r"github\.com/[a-zA-Z0-9_-]+", re.IGNORECASE)
+# GitHub pattern - URLs and text mentions like "username (github.com)"
+GITHUB_PATTERN = re.compile(
+    r"(?:https?://(?:www\.)?github\.com/[a-zA-Z0-9_-]+)"
+    r"|github\.com/[a-zA-Z0-9_-]+"
+    r"|([a-zA-Z0-9_-]+)\s*\(github\.com\)",
+    re.IGNORECASE,
+)
 
 # Date patterns
 DATE_RANGE_PATTERN = re.compile(
@@ -143,9 +159,18 @@ class StructuredParser:
         linkedin_match = LINKEDIN_PATTERN.search(text_to_search)
         linkedin = linkedin_match.group() if linkedin_match else ""
 
-        # Extract GitHub
+        # Extract GitHub (may be URL or text mention like "user (github.com)")
         github_match = GITHUB_PATTERN.search(text_to_search)
-        github = github_match.group() if github_match else ""
+        if github_match:
+            # group(1) is the username from text mention
+            username = (
+                github_match.group(1)
+                if github_match.lastindex and github_match.group(1)
+                else None
+            )
+            github = f"github.com/{username}" if username else github_match.group()
+        else:
+            github = ""
 
         # Extract name (first non-empty line in contact section)
         name = ""
