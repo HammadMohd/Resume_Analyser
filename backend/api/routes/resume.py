@@ -371,6 +371,11 @@ async def validate_resume(
         # Step 4: Run rule engine
         rule_result = rule_engine.evaluate(normalized)
 
+        # Step 5: Consolidate issues and generate examples
+        from backend.services.validation_enhancer import enhance_validation
+
+        enhanced = enhance_validation(rule_result, normalized)
+
         return JSONResponse(
             status_code=200,
             content={
@@ -380,6 +385,8 @@ async def validate_resume(
                     "upload": upload_data,
                     "normalized": normalized.model_dump(),
                     "validation": rule_result.model_dump(),
+                    "consolidated_issues": enhanced["consolidated_issues"],
+                    "bullet_examples": enhanced["bullet_examples"],
                 },
             },
         )

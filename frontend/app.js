@@ -213,6 +213,8 @@ function showResults(scoring, validation, extracted, bullets, jdText) {
 
     const extractionData = extracted?.data?.extraction || {};
     const validationData = validation?.data?.validation || {};
+    const consolidatedIssues = validation?.data?.consolidated_issues || [];
+    const bulletExamples = validation?.data?.bullet_examples || [];
     const scoringData = scoring?.data || {};
 
     // When no JD provided, show validation score in the graph so both
@@ -225,7 +227,7 @@ function showResults(scoring, validation, extracted, bullets, jdText) {
     renderBreakdown(scoringData.breakdown, jdText);
     renderExtractedSkills(extractionData, scoringData);
     renderContactInfo(extractionData);
-    renderValidation(validationData);
+    renderValidation(validationData, consolidatedIssues, bulletExamples);
     renderBullets(bullets);
 }
 
@@ -456,7 +458,7 @@ function renderContactInfo(extractionData) {
     if (urls.length) addContact('URL', urls);
 }
 
-function renderValidation(validationData) {
+function renderValidation(validationData, consolidatedIssues, bulletExamples) {
     const card = document.getElementById('validation-card');
     const container = document.getElementById('validation');
     const countBadge = document.getElementById('issue-count');
@@ -482,8 +484,11 @@ function renderValidation(validationData) {
     `;
     container.appendChild(scoreDiv);
 
-    // Issues
-    const issues = validationData.all_issues || [];
+    // Use consolidated issues if available, fallback to raw issues
+    const issues = consolidatedIssues.length > 0
+        ? consolidatedIssues
+        : (validationData.all_issues || []);
+
     const errorCount = issues.filter(i => i.severity === 'error').length;
     const warnCount = issues.filter(i => i.severity === 'warning').length;
 
@@ -494,7 +499,7 @@ function renderValidation(validationData) {
         countBadge.style.display = 'none';
     }
 
-    issues.slice(0, 15).forEach(issue => {
+    issues.forEach(issue => {
         const item = document.createElement('div');
         const sev = issue.severity || 'info';
         item.className = `issue-item ${sev}`;
@@ -511,6 +516,27 @@ function renderValidation(validationData) {
         `;
         container.appendChild(item);
     });
+
+    // Show bullet examples if available
+    if (bulletExamples && bulletExamples.length > 0) {
+        const examplesDiv = document.createElement('div');
+        examplesDiv.className = 'bullet-examples';
+        examplesDiv.innerHTML = `
+            <h4 style="margin:16px 0 8px;color:#6366f1;font-size:0.9rem;">Improved Bullet Examples</h4>
+        `;
+
+        bulletExamples.forEach(ex => {
+            const exDiv = document.createElement('div');
+            exDiv.className = 'example-item';
+            exDiv.innerHTML = `
+                <div class="example-original"><strong>Before:</strong> ${escapeHtml(ex.original)}</div>
+                <div class="example-improved"><strong>After:</strong> ${escapeHtml(ex.improved)}</div>
+            `;
+            examplesDiv.appendChild(exDiv);
+        });
+
+        container.appendChild(examplesDiv);
+    }
 }
 
 function renderBullets(bullets) {

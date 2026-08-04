@@ -685,6 +685,35 @@ textarea::placeholder { color: var(--text-muted); }
     font-style: italic;
 }
 
+/* Bullet Examples */
+.bullet-examples {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.example-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.example-original {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px dashed var(--border);
+}
+
+.example-improved {
+    font-size: 0.85rem;
+    color: #166534;
+    font-weight: 500;
+}
+
 /* Bullets */
 .bullet-item {
     background: var(--bg);
