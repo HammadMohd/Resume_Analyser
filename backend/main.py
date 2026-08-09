@@ -24,8 +24,21 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan manager for startup/shutdown events."""
     setup_logging()
     logger.info("Starting %s v%s", settings.app_name, settings.app_version)
+
+    # Initialize DB tables
+    try:
+        from backend.db.database import engine
+        from backend.models import Base
+
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables initialized successfully.")
+    except Exception as e:
+        logger.warning("Database auto-initialization deferred: %s", str(e))
+
     yield
     logger.info("Shutting down %s", settings.app_name)
+
 
 
 app = FastAPI(

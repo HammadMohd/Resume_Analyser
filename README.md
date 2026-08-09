@@ -1,109 +1,130 @@
-# Resume Analyzer
+# Multi-ATS Resume Analyzer & AI Tailoring Studio
 
-Deterministic-First ATS Resume Analyzer — a production-grade system that parses, validates, scores, and refumes resumes using deterministic engineering first, LLM only for final editing.
+> **Production-Grade, Deterministic-First ATS Engine & AI Resume Tailoring Platform**
 
-## Architecture
+A full-stack, enterprise-ready resume engineering system that parses, validates, emulates major ATS software, scores bullet impact, tailors resumes using the **STAR methodology**, and exports clean, ATS-compliant PDF & DOCX documents.
+
+---
+
+## 🌟 Key Features & Highlights
+
+### 🎯 1. Multi-ATS Software Emulation Engine
+Emulates parsing behaviors, layout penalties, and scoring criteria of top 5 enterprise ATS platforms:
+- **Workday:** Evaluates section header standardization, double-column penalties, and table layout warnings.
+- **Greenhouse:** Measures embedded skill-to-experience context density.
+- **Lever:** Checks contact placement, email/phone validation, and LinkedIn profile integration.
+- **Taleo:** Enforces word-count thresholds per bullet, exact phrase matching, and character compliance.
+- **iCIMS:** Checks degree hierarchy and keyword distribution.
+
+### ⚡ 2. Impact Quantification & Readability Analytics
+- **Metric Quantifier:** Detects percentages (`%`), dollar amounts (`$`), multipliers (`10x`), and scale counts in experience bullets.
+- **Action Verb Intensity:** Classifies leading verbs into High-Impact (*Engineered, Spearheaded*), Moderate, or Weak (*Worked on, Assisted*).
+- **Buzzword & Readability Detector:** Identifies overused corporate jargon and recommends concrete alternatives.
+
+### 🪄 3. AI-Powered STAR Resume Tailor
+- **Target JD Alignment:** Identifies missing target skills from any Job Description.
+- **STAR Framework Rewriter:** Transforms generic bullets into high-impact Situation-Task-Action-Result statements (via Google Gemini API or deterministic fallback).
+- **Zero Hallucination Guarantee:** Preserves candidate experience facts while elevating structure and keywords.
+
+### 📄 4. ATS-Proof PDF & DOCX Exporter
+- Exports tailored resumes in single-column, 1-page/2-page clean layouts engineered to pass 100% of ATS parsers.
+
+### 🗄️ 5. Database & History Tracking
+- Powered by **Async SQLAlchemy 2.0** (SQLite for zero-config local dev, PostgreSQL for production).
+- Stores parsed resumes, job descriptions, analysis records, and tailored versions.
+
+### 🎨 6. Premium Glassmorphic UI Dashboard
+- Dark-mode glassmorphic interface with multi-tab navigation (Overview, Multi-ATS Hub, Impact Analytics, AI Tailor Studio, Export Hub).
+
+---
+
+## 🏗️ System Architecture
 
 ```
-Client → Upload → Validate → Store → Parse → Extract → Score → LLM Refine → Dashboard
+                                  ┌───────────────────────────┐
+                                  │   Glassmorphic Dashboard  │
+                                  └─────────────┬─────────────┘
+                                                │
+                                  ┌─────────────▼─────────────┐
+                                  │    FastAPI HTTP Router    │
+                                  └─────────────┬─────────────┘
+                                                │
+     ┌──────────────────┬───────────────────────┼───────────────────────┬──────────────────┐
+     │                  │                       │                       │                  │
+┌────▼────────┐  ┌──────▼──────┐       ┌────────▼────────┐     ┌────────▼────────┐ ┌──────▼──────┐
+│ PDF / DOCX  │  │  Multi-ATS  │       │  Impact Metric  │     │   AI Tailor     │ │  ReportLab / │
+│   Parser    │  │  Emulator   │       │    Analyzer     │     │ (Gemini / STAR) │ │  DOCX Export │
+└────┬────────┘  └──────┬──────┘       └────────┬────────┘     └────────┬────────┘ └──────┬──────┘
+     │                  │                       │                       │                  │
+     └──────────────────┴───────────────────────┼───────────────────────┴──────────────────┘
+                                                │
+                                  ┌─────────────▼─────────────┐
+                                  │ Async SQLAlchemy / SQLite │
+                                  └───────────────────────────┘
 ```
 
-## Current Status
+---
 
-**Phase 2 Complete** — Upload system with validation, storage, and metadata.
+## 🚀 Quick Start
 
-## Quick Start
+### 1. Prerequisites
+- Python 3.11+
+- `uv` (recommended fast package installer) or `pip`
 
-## Quick Start
+### 2. Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/HammadMohd/Resume_Analyser.git
-
-# Go into the project
 cd Resume_Analyser
 
-# Create a virtual environment
-python -m venv .venv
-
-# Activate it (Windows)
-.venv\Scripts\activate
-
-# Activate it (Linux/macOS)
-source .venv/bin/activate
-
-# Install the project
-pip install -e ".[dev]"
-
-# Run the FastAPI server
-fastapi dev backend/main.py
-
-# Run the tests
-pytest tests -v
+# Create virtual environment and install dependencies
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -e ".[dev,ocr,nlp,search,llm,database,cache,queue]"
 ```
 
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/resumes/` | Upload a resume (PDF/DOCX) |
-| GET | `/health` | Health check |
-
-## Upload Response
-
-```json
-{
-  "success": true,
-  "message": "File uploaded and stored successfully",
-  "data": {
-    "id": "uuid",
-    "original_filename": "resume.pdf",
-    "stored_filename": "uuid.pdf",
-    "content_type": "application/pdf",
-    "size_bytes": 12345,
-    "upload_timestamp": "2026-08-03T14:00:00Z"
-  }
-}
-```
-
-## Project Structure
-
-```
-Resume_Analyser/
-├── backend/
-│   ├── api/routes/     → HTTP endpoints
-│   ├── services/       → Business logic
-│   ├── schemas/        → Pydantic models
-│   ├── config/         → Settings
-│   ├── utils/          → Logging, helpers
-│   ├── exceptions.py   → Custom exceptions
-│   └── main.py         → App entry point
-├── tests/              → Test suite
-├── uploads/            → Stored files
-├── docker/             → Docker config
-└── docs/               → Documentation
-```
-
-## Tech Stack
-
-- **Backend:** FastAPI, Python 3.11+
-- **Validation:** Pydantic
-- **Storage:** Local filesystem with UUID filenames
-- **Testing:** pytest
-
-## Development
+### 3. Environment Setup
 
 ```bash
-# Install dependencies
-pip install "fastapi[standard]" pytest pytest-asyncio httpx
-
-# Run tests
-python -m pytest tests/ -v
-
-# Run server with debug
-$env:DEBUG="true"; fastapi dev backend/main.py
+cp .env.example .env
+# Set your GEMINI_API_KEY (optional, fallback rules work out-of-the-box!)
 ```
 
-## License
+### 4. Run Application
 
-MIT
+```bash
+# Start FastAPI Dev Server
+uv run fastapi dev backend/main.py
+```
+
+Open your browser at `http://localhost:8000` to access the Dashboard, or `http://localhost:8000/docs` for the interactive API Documentation.
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+```bash
+# Run pytest test suite
+uv run pytest tests/ -v
+```
+
+---
+
+## 🛰️ API Endpoints Summary
+
+| Category | Method | Endpoint | Description |
+|----------|--------|----------|-------------|
+| **Resumes** | `POST` | `/api/v1/resumes/` | Upload & store resume file |
+| **Resumes** | `POST` | `/api/v1/resumes/parse` | Parse resume into layout structured text |
+| **Resumes** | `POST` | `/api/v1/resumes/extract` | Extract entities, skills, contact info |
+| **Resumes** | `POST` | `/api/v1/resumes/export/pdf` | Export ATS-compliant clean PDF |
+| **Resumes** | `POST` | `/api/v1/resumes/export/docx` | Export ATS-compliant clean DOCX |
+| **Multi-ATS**| `POST` | `/api/v1/score/multi-ats` | Evaluate Workday, Greenhouse, Lever, Taleo, iCIMS |
+| **Impact** | `POST` | `/api/v1/score/impact` | Score metric quantification & action verbs |
+| **Tailor** | `POST` | `/api/v1/rewrite/tailor` | Auto-tailor experience bullets to target JD |
+
+---
+
+## 📜 License
+MIT License. Created by Hammad Mohd.

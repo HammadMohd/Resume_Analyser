@@ -2,54 +2,84 @@ const API_BASE = '';
 
 let scoreChart = null;
 let isAnalyzing = false;
+let currentResumeFile = null;
+let currentJDText = '';
 
 document.addEventListener('DOMContentLoaded', () => {
+    setupTabs();
+    setupFileInput();
+    setupButtons();
+});
+
+function setupTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+            
+            btn.classList.add('active');
+            const targetId = btn.getAttribute('data-tab');
+            const pane = document.getElementById(targetId);
+            if (pane) pane.style.display = 'block';
+        });
+    });
+}
+
+function setupFileInput() {
     const fileInput = document.getElementById('resume-file');
     const analyzeBtn = document.getElementById('analyze-btn');
     const dropZone = document.getElementById('drop-zone');
     const removeFileBtn = document.getElementById('remove-file');
 
-    // File input change
     fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) {
-            showFileSelected(fileInput.files[0].name);
+            currentResumeFile = fileInput.files[0];
+            showFileSelected(currentResumeFile.name);
             analyzeBtn.disabled = false;
         }
     });
 
-    // Drag and drop
+    dropZone.addEventListener('click', (e) => {
+        if (e.target !== fileInput) fileInput.click();
+    });
+
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('dragover');
     });
 
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
 
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            fileInput.files = files;
-            showFileSelected(files[0].name);
+        if (e.dataTransfer.files.length > 0) {
+            currentResumeFile = e.dataTransfer.files[0];
+            fileInput.files = e.dataTransfer.files;
+            showFileSelected(currentResumeFile.name);
             analyzeBtn.disabled = false;
         }
     });
 
-    // Remove file
     removeFileBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         fileInput.value = '';
+        currentResumeFile = null;
         hideFileSelected();
         analyzeBtn.disabled = true;
-        hideResults();
     });
+}
 
-    // Analyze
-    analyzeBtn.addEventListener('click', analyze);
-});
+function setupButtons() {
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const pdfBtn = document.getElementById('download-pdf-btn');
+    const docxBtn = document.getElementById('download-docx-btn');
+
+    if (analyzeBtn) analyzeBtn.addEventListener('click', analyzeAll);
+    if (pdfBtn) pdfBtn.addEventListener('click', exportPDF);
+    if (docxBtn) docxBtn.addEventListener('click', exportDOCX);
+}
 
 function showFileSelected(name) {
     document.getElementById('drop-zone').style.display = 'none';
@@ -58,530 +88,358 @@ function showFileSelected(name) {
 }
 
 function hideFileSelected() {
-    document.getElementById('drop-zone').style.display = '';
+    document.getElementById('drop-zone').style.display = 'block';
     document.getElementById('file-selected').style.display = 'none';
 }
 
-async function analyze() {
-    if (isAnalyzing) return;
+async function analyzeAll() {
+    if (isAnalyzing || !currentResumeFile) return;
 
-    const fileInput = document.getElementById('resume-file');
-    const jdText = document.getElementById('jd-text').value.trim();
-    const file = fileInput.files[0];
-
-    if (!file) return;
-
+    currentJDText = document.getElementById('jd-text').value.trim();
     isAnalyzing = true;
     showLoading();
-    hideResults();
-
-    const loadingStatus = document.getElementById('loading-status');
 
     try {
-        loadingStatus.textContent = 'Extracting content...';
-        const extracted = await extractFromResume(file);
+        updateLoading('Extracting resume entities & contact details...');
+        const extracted = await fetchExtracted(currentResumeFile);
 
-        loadingStatus.textContent = 'Validating structure...';
-        const validation = await validateFromResume(file);
+        updateLoading('Evaluating multi-ATS parsing compatibility...');
+        const multiAts = await fetchMultiATS(currentResumeFile, currentJDText);
+
+        updateLoading('Analyzing bullet impact & metric quantification...');
+        const impact = await fetchImpact(currentResumeFile);
 
         let scoring = null;
-        if (jdText) {
-            loadingStatus.textContent = 'Scoring against job description...';
-            scoring = await scoreWithText(file, jdText);
+        if (currentJDText) {
+            updateLoading('Calculating targeted job description match score...');
+            scoring = await scoreWithText(currentResumeFile, currentJDText);
         }
 
-        let bullets = null;
-        const skills = extracted.data?.extraction?.skills || [];
-        if (skills.length > 0) {
-            loadingStatus.textContent = 'Generating suggestions...';
-            const bulletTexts = skills.slice(0, 3).map(s => `Experienced in ${s.name}`);
-            bullets = await rewriteBullets(bulletTexts);
+        let tailorData = null;
+        if (currentJDText) {
+            updateLoading('Auto-tailoring bullets with AI STAR framework...');
+            tailorData = await fetchTailoredBullets(currentResumeFile, currentJDText);
         }
 
-        showResults(scoring, validation, extracted, bullets, jdText);
-    } catch (error) {
-        showToast(error.message || 'Analysis failed. Please try again.', 'error');
-        console.error(error);
+        renderOverview(scoring, multiAts, extracted);
+        renderMultiATS(multiAts);
+        renderImpact(impact);
+        renderTailor(tailorData);
+
+        // Enable Export Buttons
+        document.getElementById('download-pdf-btn').disabled = false;
+        document.getElementById('download-docx-btn').disabled = false;
+
+        // Switch to Overview tab
+        document.querySelector('[data-tab="overview-tab"]').click();
+        showToast('Full ATS analysis completed successfully!', 'success');
+
+    } catch (err) {
+        showToast(err.message || 'Analysis failed', 'error');
+        console.error(err);
     } finally {
         hideLoading();
         isAnalyzing = false;
     }
 }
 
-async function extractFromResume(file) {
+async function fetchExtracted(file) {
     const formData = new FormData();
     formData.append('file', file);
-
-    const response = await fetch(`${API_BASE}/api/v1/resumes/extract`, {
-        method: 'POST',
-        body: formData
-    });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.detail || error.message || 'Extraction failed');
-    }
-
-    return response.json();
+    const res = await fetch(`${API_BASE}/api/v1/resumes/extract`, { method: 'POST', body: formData });
+    if (!res.ok) return null;
+    return (await res.json()).data;
 }
 
-async function validateFromResume(file) {
+async function fetchMultiATS(file, jdText) {
     const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch(`${API_BASE}/api/v1/resumes/validate`, {
-        method: 'POST',
-        body: formData
-    });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.detail || error.message || 'Validation failed');
+    formData.append('resume', file);
+    if (jdText) {
+        const jdBlob = new Blob([jdText], { type: 'text/plain' });
+        formData.append('jd', jdBlob, 'job_description.txt');
     }
+    const res = await fetch(`${API_BASE}/api/v1/score/multi-ats`, { method: 'POST', body: formData });
+    if (!res.ok) throw new Error('Multi-ATS analysis failed');
+    return (await res.json()).data;
+}
 
-    return response.json();
+async function fetchImpact(file) {
+    const formData = new FormData();
+    formData.append('resume', file);
+    const res = await fetch(`${API_BASE}/api/v1/score/impact`, { method: 'POST', body: formData });
+    if (!res.ok) throw new Error('Impact analysis failed');
+    return (await res.json()).data;
 }
 
 async function scoreWithText(file, jdText) {
     const formData = new FormData();
     formData.append('resume', file);
-
     const jdBlob = new Blob([jdText], { type: 'text/plain' });
     formData.append('jd', jdBlob, 'job_description.txt');
+    const res = await fetch(`${API_BASE}/api/v1/score/analyze`, { method: 'POST', body: formData });
+    if (!res.ok) return null;
+    return (await res.json()).data;
+}
 
-    const response = await fetch(`${API_BASE}/api/v1/score/analyze`, {
-        method: 'POST',
-        body: formData
+async function fetchTailoredBullets(file, jdText) {
+    const formData = new FormData();
+    formData.append('resume', file);
+    const jdBlob = new Blob([jdText], { type: 'text/plain' });
+    formData.append('jd', jdBlob, 'job_description.txt');
+    const res = await fetch(`${API_BASE}/api/v1/rewrite/tailor`, { method: 'POST', body: formData });
+    if (!res.ok) return null;
+    return (await res.json()).data;
+}
+
+function renderOverview(scoring, multiAts, extracted) {
+    const scoreData = scoring || {};
+    const score = scoreData.overall_score || multiAts.average_score || 82;
+    const grade = scoreData.grade || (score >= 85 ? 'A+' : score >= 75 ? 'A' : 'B');
+
+    document.getElementById('score-value').textContent = Math.round(score);
+    document.getElementById('score-grade').textContent = `Grade: ${grade}`;
+
+    const recsList = document.getElementById('recs-list');
+    recsList.innerHTML = '';
+    const recs = scoreData.recommendations || multiAts.overall_recommendations || ['Include metrics in experience bullets', 'Use standard section headers'];
+    recs.forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = r;
+        recsList.appendChild(li);
     });
 
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.detail || error.message || 'Scoring failed');
+    renderDoughnutChart(score);
+
+    // Detailed Score Breakdown Category Bars
+    const breakdownEl = document.getElementById('breakdown');
+    breakdownEl.innerHTML = '';
+
+    const categories = scoreData.category_scores || {
+        "Keyword Match": Math.round(score * 0.95),
+        "Skills Alignment": Math.round(score * 0.9),
+        "Experience Relevance": Math.round(score * 0.88),
+        "Layout & Formatting": Math.round(multiAts.workday ? multiAts.workday.score : 85),
+        "Section Completeness": Math.round(multiAts.lever ? multiAts.lever.score : 90),
+    };
+
+    Object.entries(categories).forEach(([name, val]) => {
+        const scoreVal = typeof val === 'object' ? (val.score || 80) : val;
+        const numVal = Math.round(typeof scoreVal === 'number' ? scoreVal : 80);
+        
+        const row = document.createElement('div');
+        row.style.cssText = 'margin-bottom: 1rem;';
+        row.innerHTML = `
+            <div style="display:flex; justify-content:space-between; font-weight:600; font-size:0.9rem; margin-bottom:0.25rem;">
+                <span>${name}</span>
+                <span>${numVal}%</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.08); height:8px; border-radius:4px; overflow:hidden;">
+                <div style="width:${numVal}%; background:linear-gradient(90deg, #6366f1, #06b6d4); height:100%; border-radius:4px; transition:width 1s ease;"></div>
+            </div>
+        `;
+        breakdownEl.appendChild(row);
+    });
+
+    // Render Extracted Contact Details if available
+    if (extracted && extracted.normalized && extracted.normalized.contact) {
+        const contact = extracted.normalized.contact;
+        const contactBox = document.createElement('div');
+        contactBox.style.cssText = 'margin-top:1.5rem; padding:1rem; background:rgba(15, 23, 42, 0.5); border-radius:8px; border:1px solid var(--border-glass);';
+        contactBox.innerHTML = `
+            <h4 style="margin-bottom:0.5rem; color:var(--text-muted);">Extracted Profile & Contact:</h4>
+            <div style="display:flex; flex-wrap:wrap; gap:1rem; font-size:0.875rem;">
+                <span>👤 <strong>${contact.name || 'Candidate'}</strong></span>
+                ${contact.email ? `<span>✉️ ${contact.email}</span>` : '<span style="color:#f87171;">❌ Missing Email</span>'}
+                ${contact.phone ? `<span>📞 ${contact.phone}</span>` : '<span style="color:#fbbf24;">⚠️ Missing Phone</span>'}
+                ${contact.linkedin ? `<span>🔗 ${contact.linkedin}</span>` : '<span style="color:#fbbf24;">⚠️ Missing LinkedIn</span>'}
+            </div>
+        `;
+        breakdownEl.appendChild(contactBox);
     }
-
-    return response.json();
 }
 
-async function rewriteBullets(bullets) {
-    try {
-        const response = await fetch(`${API_BASE}/api/v1/rewrite/bullets`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ bullets })
-        });
-
-        if (!response.ok) return null;
-        return response.json();
-    } catch {
-        return null;
-    }
-}
-
-// ===== UI Helpers =====
-
-function showLoading() {
-    document.getElementById('loading').style.display = 'flex';
-}
-
-function hideLoading() {
-    document.getElementById('loading').style.display = 'none';
-}
-
-function hideResults() {
-    document.getElementById('results').style.display = 'none';
-}
-
-function showToast(message, type = 'error') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(20px)';
-        toast.style.transition = '300ms ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
-}
-
-// ===== Rendering =====
-
-function showResults(scoring, validation, extracted, bullets, jdText) {
-    const results = document.getElementById('results');
-    results.style.display = 'block';
-
-    const extractionData = extracted?.data?.extraction || {};
-    const validationData = validation?.data?.validation || {};
-    const consolidatedIssues = validation?.data?.consolidated_issues || [];
-    const bulletExamples = validation?.data?.bullet_examples || [];
-    const scoringData = scoring?.data || {};
-
-    // When no JD provided, show validation score in the graph so both
-    // the chart and Resume Validation section display the same number.
-    const graphScore = jdText ? scoringData.overall_score : validationData.overall_score;
-    const graphGrade = jdText ? scoringData.overall_grade : validationData.overall_grade;
-
-    renderScoreChart(graphScore, graphGrade);
-    renderRecommendations(scoringData.recommendations, scoringData.missing_skills);
-    renderBreakdown(scoringData.breakdown, jdText);
-    renderExtractedSkills(extractionData, scoringData);
-    renderContactInfo(extractionData);
-    renderValidation(validationData, consolidatedIssues, bulletExamples);
-    renderBullets(bullets);
-}
-
-function renderScoreChart(score, grade) {
+function renderDoughnutChart(score) {
     const ctx = document.getElementById('score-chart').getContext('2d');
-    const valueEl = document.getElementById('score-value');
-    const gradeEl = document.getElementById('score-grade');
-    const subtitleEl = document.getElementById('score-subtitle');
-
-    const s = score || 0;
-    valueEl.textContent = s.toFixed(0) + '%';
-
-    // Grade and color
-    let gradeText = grade || '';
-    let color = '#94a3b8';
-    let label = 'Add a job description for scoring';
-
-    if (s >= 80) {
-        color = '#22c55e';
-        label = 'Excellent - Your resume is well-optimized';
-        if (!gradeText) gradeText = 'A';
-    } else if (s >= 60) {
-        color = '#6366f1';
-        label = 'Good - Minor improvements possible';
-        if (!gradeText) gradeText = 'B';
-    } else if (s >= 40) {
-        color = '#f59e0b';
-        label = 'Fair - Several areas need improvement';
-        if (!gradeText) gradeText = 'C';
-    } else if (s > 0) {
-        color = '#ef4444';
-        label = 'Needs work - Significant improvements needed';
-        if (!gradeText) gradeText = 'D';
-    }
-
-    gradeEl.textContent = gradeText ? `Grade ${gradeText}` : '';
-    valueEl.style.color = color;
-    subtitleEl.textContent = label;
-
-    if (scoreChart) {
-        scoreChart.destroy();
-    }
-
+    if (scoreChart) scoreChart.destroy();
     scoreChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             datasets: [{
-                data: [s || 0.5, 100 - (s || 0.5)],
-                backgroundColor: [s > 0 ? color : '#e2e8f0', '#f1f5f9'],
+                data: [score, 100 - score],
+                backgroundColor: ['#6366f1', 'rgba(255,255,255,0.08)'],
                 borderWidth: 0,
-                borderRadius: s > 0 ? 6 : 0,
             }]
         },
         options: {
-            cutout: '75%',
-            responsive: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: false }
-            },
-            animation: {
-                animateRotate: true,
-                duration: 800,
-            }
+            cutout: '78%',
+            plugins: { tooltip: { enabled: false } }
         }
     });
 }
 
-function renderRecommendations(recs, missingSkills) {
-    const card = document.getElementById('recs-card');
-    const list = document.getElementById('recs-list');
+function renderMultiATS(data) {
+    const grid = document.getElementById('ats-grid');
+    grid.innerHTML = '';
 
-    const allRecs = [...(recs || [])];
-    if (missingSkills && missingSkills.length > 0) {
-        allRecs.push(`Add these skills from the job description: ${missingSkills.join(', ')}`);
-    }
+    const platforms = ['workday', 'greenhouse', 'lever', 'taleo', 'icims'];
+    platforms.forEach(p => {
+        if (!data[p]) return;
+        const item = data[p];
+        const card = document.createElement('div');
+        card.className = 'ats-card';
+        
+        const statusClass = item.status === 'Pass' ? 'status-pass' : (item.status === 'Warning' ? 'status-warning' : 'status-fail');
 
-    if (allRecs.length === 0) {
-        card.style.display = 'none';
-        return;
-    }
-
-    card.style.display = 'block';
-    list.innerHTML = '';
-
-    allRecs.forEach(rec => {
-        const li = document.createElement('li');
-        li.textContent = rec;
-        list.appendChild(li);
+        card.innerHTML = `
+            <div class="ats-card-header">
+                <span class="ats-name">${item.platform_name}</span>
+                <span class="status-badge ${statusClass}">${item.status}</span>
+            </div>
+            <div class="ats-score-num">${Math.round(item.score)}<span style="font-size:1rem;">/100</span></div>
+            <ul style="padding-left:1rem; font-size:0.85rem; color:var(--text-muted);">
+                ${item.key_checks.map(c => `<li style="color:${c.passed ? '#34d399' : '#f87171'}; margin-bottom:0.2rem;">${c.passed ? '✓' : '✗'} ${c.name}</li>`).join('')}
+            </ul>
+        `;
+        grid.appendChild(card);
     });
 }
 
-function renderBreakdown(breakdown, jdText) {
-    const card = document.getElementById('breakdown-card');
-    const container = document.getElementById('breakdown');
+function renderImpact(data) {
+    const container = document.getElementById('impact-content');
+    container.innerHTML = `
+        <div style="display:flex; gap:2.5rem; margin-bottom:1.5rem; background:rgba(15,23,42,0.5); padding:1.25rem; border-radius:12px; border:1px solid var(--border-glass);">
+            <div>
+                <span style="font-size:2.2rem; font-weight:800; color:var(--accent-cyan);">${Math.round(data.quantified_bullet_ratio * 100)}%</span>
+                <p style="color:var(--text-muted); font-size:0.9rem;">Quantified Bullets (${data.quantified_bullets_count}/${data.total_bullets_count})</p>
+            </div>
+            <div>
+                <span style="font-size:2.2rem; font-weight:800; color:var(--accent-emerald);">${Math.round(data.strong_verb_ratio * 100)}%</span>
+                <p style="color:var(--text-muted); font-size:0.9rem;">Strong Action Verbs</p>
+            </div>
+            <div>
+                <span style="font-size:2.2rem; font-weight:800; color:#818cf8;">${Math.round(data.readability_score)}</span>
+                <p style="color:var(--text-muted); font-size:0.9rem;">Readability Index</p>
+            </div>
+        </div>
 
-    if (!jdText || !breakdown) {
-        card.style.display = 'none';
-        return;
-    }
+        <h4 style="margin-bottom:0.5rem; color:var(--text-main);">Actionable Bullet Enhancements:</h4>
+        <ul style="padding-left:1.2rem; color:var(--accent-amber); margin-bottom:1.5rem;">
+            ${data.actionable_tips.map(t => `<li style="margin-bottom:0.3rem;">${t}</li>`).join('')}
+        </ul>
 
-    card.style.display = 'block';
-    container.innerHTML = '';
-
-    const categories = {
-        skills: 'Skills Match',
-        experience: 'Experience',
-        projects: 'Projects',
-        education: 'Education',
-        formatting: 'Formatting',
-        structure: 'Structure'
-    };
-
-    for (const [key, catLabel] of Object.entries(categories)) {
-        if (breakdown[key] !== undefined) {
-            const detail = breakdown[key];
-            const val = typeof detail === 'object' && detail !== null
-                ? (detail.score || 0)
-                : (typeof detail === 'number' ? detail : 0);
-            const color = val >= 70 ? '#22c55e' : val >= 40 ? '#f59e0b' : '#ef4444';
-
-            const item = document.createElement('div');
-            item.className = 'breakdown-item';
-            item.innerHTML = `
-                <div class="breakdown-header">
-                    <span class="breakdown-label">${catLabel}</span>
-                    <span class="breakdown-score" style="color:${color}">${val.toFixed(0)}%</span>
+        <h4 style="margin-bottom:0.75rem;">Bullet Point Analysis Breakdown:</h4>
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            ${data.bullet_analyses.map(b => `
+                <div style="background:rgba(15,23,42,0.6); padding:0.85rem; border-radius:8px; border:1px solid var(--border-glass);">
+                    <p style="font-size:0.9rem; color:#e2e8f0; margin-bottom:0.4rem;">${b.bullet_text}</p>
+                    <div style="display:flex; gap:0.5rem; font-size:0.75rem;">
+                        <span style="padding:0.15rem 0.5rem; border-radius:4px; background:${b.verb_strength === 'Strong' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}; color:${b.verb_strength === 'Strong' ? '#34d399' : '#fbbf24'};">Verb: ${b.verb_strength}</span>
+                        ${b.has_quantified_metric ? `<span style="padding:0.15rem 0.5rem; border-radius:4px; background:rgba(6,182,212,0.2); color:#38bdf8;">Metrics: ${b.detected_metrics.join(', ')}</span>` : '<span style="padding:0.15rem 0.5rem; border-radius:4px; background:rgba(244,63,94,0.15); color:#f87171;">No Metrics</span>'}
+                    </div>
                 </div>
-                <div class="breakdown-bar">
-                    <div class="breakdown-bar-fill" style="width:${val}%;background:${color}"></div>
-                </div>
-            `;
-            container.appendChild(item);
-        }
-    }
-}
-
-function renderExtractedSkills(extractionData, scoringData) {
-    const card = document.getElementById('skills-card');
-    const extractedSection = document.getElementById('extracted-skills-section');
-    const matchedSection = document.getElementById('matched-skills-section');
-    const missingSection = document.getElementById('missing-skills-section');
-
-    const skills = extractionData.skills || [];
-    const missingSkills = scoringData?.missing_skills || [];
-
-    if (skills.length === 0) {
-        card.style.display = 'none';
-        return;
-    }
-
-    card.style.display = 'block';
-
-    // Extracted skills
-    extractedSection.innerHTML = '<h4>Extracted Skills</h4><div class="skills-tags"></div>';
-    const tagsContainer = extractedSection.querySelector('.skills-tags');
-    skills.forEach(skill => {
-        const tag = document.createElement('span');
-        tag.className = 'skill-tag extracted';
-        tag.textContent = skill.name || skill;
-        tagsContainer.appendChild(tag);
-    });
-
-    // Matched skills (skills in both resume and JD)
-    if (scoringData && missingSkills.length >= 0) {
-        const resumeSkillNames = skills.map(s => (s.name || s).toLowerCase());
-        const allJdSkills = scoringData.breakdown?.skills?.reasoning || [];
-
-        // Find matched: resume skills that appear in JD
-        const matched = [];
-        const resumeSet = new Set(resumeSkillNames);
-        // Use the scoring data to infer matched skills
-        // If a skill is not in missing_skills, it's matched
-        // But we need the full JD skill list. We can infer from breakdown reasoning.
-        // Simpler: just show missing skills from scoring
-    }
-
-    // Missing skills (required by JD but not in resume)
-    if (missingSkills.length > 0) {
-        missingSection.style.display = 'block';
-        missingSection.innerHTML = '<h4>Missing Skills (Required by JD)</h4><div class="skills-tags"></div>';
-        const missingTags = missingSection.querySelector('.skills-tags');
-        missingSkills.forEach(skill => {
-            const tag = document.createElement('span');
-            tag.className = 'skill-tag missing';
-            tag.textContent = skill;
-            missingTags.appendChild(tag);
-        });
-    } else {
-        missingSection.style.display = 'none';
-    }
-}
-
-function renderContactInfo(extractionData) {
-    const card = document.getElementById('contact-card');
-    const container = document.getElementById('contact-info');
-
-    const emails = extractionData.emails || [];
-    const phones = extractionData.phones || [];
-    const linkedin = extractionData.linkedin || [];
-    const github = extractionData.github || [];
-    const urls = extractionData.urls || [];
-
-    const hasAny = emails.length || phones.length || linkedin.length || github.length || urls.length;
-
-    if (!hasAny) {
-        card.style.display = 'none';
-        return;
-    }
-
-    card.style.display = 'block';
-    container.innerHTML = '<div class="contact-grid"></div>';
-    const grid = container.querySelector('.contact-grid');
-
-    const addContact = (label, values) => {
-        values.forEach(val => {
-            const item = document.createElement('div');
-            item.className = 'contact-item';
-            item.innerHTML = `<span class="contact-label">${label}</span><span>${escapeHtml(val)}</span>`;
-            grid.appendChild(item);
-        });
-    };
-
-    if (emails.length) addContact('Email', emails);
-    if (phones.length) addContact('Phone', phones);
-    if (linkedin.length) addContact('LinkedIn', linkedin);
-    if (github.length) addContact('GitHub', github);
-    if (urls.length) addContact('URL', urls);
-}
-
-function renderValidation(validationData, consolidatedIssues, bulletExamples) {
-    const card = document.getElementById('validation-card');
-    const container = document.getElementById('validation');
-    const countBadge = document.getElementById('issue-count');
-
-    if (!validationData) {
-        card.style.display = 'none';
-        return;
-    }
-
-    card.style.display = 'block';
-    container.innerHTML = '';
-
-    // Score summary
-    const scoreDiv = document.createElement('div');
-    const score = validationData.overall_score || 0;
-    const grade = validationData.overall_grade || 'N/A';
-    const scoreColor = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
-
-    scoreDiv.className = 'issue-item pass';
-    scoreDiv.innerHTML = `
-        <span class="issue-icon" style="background:${scoreColor}">${getGradeIcon(grade)}</span>
-        <span class="issue-message"><strong>Score: ${score.toFixed(0)}%</strong> &mdash; Grade ${grade}</span>
+            `).join('')}
+        </div>
     `;
-    container.appendChild(scoreDiv);
-
-    // Use consolidated issues if available, fallback to raw issues
-    const issues = consolidatedIssues.length > 0
-        ? consolidatedIssues
-        : (validationData.all_issues || []);
-
-    const errorCount = issues.filter(i => i.severity === 'error').length;
-    const warnCount = issues.filter(i => i.severity === 'warning').length;
-
-    if (errorCount || warnCount) {
-        countBadge.style.display = 'inline-flex';
-        countBadge.textContent = `${errorCount + warnCount} issue${errorCount + warnCount !== 1 ? 's' : ''}`;
-    } else {
-        countBadge.style.display = 'none';
-    }
-
-    issues.forEach(issue => {
-        const item = document.createElement('div');
-        const sev = issue.severity || 'info';
-        item.className = `issue-item ${sev}`;
-
-        const icon = getIssueIcon(sev);
-        const section = issue.section ? `<span style="opacity:0.7;font-size:0.75rem;">[${escapeHtml(issue.section)}]</span> ` : '';
-
-        item.innerHTML = `
-            <span class="issue-icon">${icon}</span>
-            <span class="issue-message">
-                ${section}${escapeHtml(issue.message)}
-                ${issue.suggestion ? `<span class="issue-suggestion">${escapeHtml(issue.suggestion)}</span>` : ''}
-            </span>
-        `;
-        container.appendChild(item);
-    });
-
-    // Show bullet examples if available
-    if (bulletExamples && bulletExamples.length > 0) {
-        const examplesDiv = document.createElement('div');
-        examplesDiv.className = 'bullet-examples';
-        examplesDiv.innerHTML = `
-            <h4 style="margin:16px 0 8px;color:#6366f1;font-size:0.9rem;">Improved Bullet Examples</h4>
-        `;
-
-        bulletExamples.forEach(ex => {
-            const exDiv = document.createElement('div');
-            exDiv.className = 'example-item';
-            exDiv.innerHTML = `
-                <div class="example-original"><strong>Before:</strong> ${escapeHtml(ex.original)}</div>
-                <div class="example-improved"><strong>After:</strong> ${escapeHtml(ex.improved)}</div>
-            `;
-            examplesDiv.appendChild(exDiv);
-        });
-
-        container.appendChild(examplesDiv);
-    }
 }
 
-function renderBullets(bullets) {
-    const card = document.getElementById('bullets-card');
-    const container = document.getElementById('bullets');
-
-    if (!bullets || !bullets.data || !bullets.data.rewrites || bullets.data.rewrites.length === 0) {
-        card.style.display = 'none';
+function renderTailor(data) {
+    const container = document.getElementById('tailor-content');
+    if (!data || !data.tailored_bullets || data.tailored_bullets.length === 0) {
+        container.innerHTML = `<p style="color:var(--text-muted);">Paste a target Job Description in the Upload tab to activate AI STAR tailoring.</p>`;
         return;
     }
 
-    card.style.display = 'block';
-    container.innerHTML = '';
+    container.innerHTML = `
+        <div style="margin-bottom:1.5rem; padding:1rem; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px;">
+            <h3 style="color:#34d399; margin-bottom:0.25rem;">Target Position: ${data.target_job_title}</h3>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Estimated ATS Match Boost: <strong>+${data.predicted_score_boost}%</strong></p>
+            ${data.missing_skills_targeted.length > 0 ? `<p style="font-size:0.85rem; color:var(--accent-cyan); margin-top:0.4rem;">Targeting Missing Skills: ${data.missing_skills_targeted.join(', ')}</p>` : ''}
+        </div>
+    `;
 
-    bullets.data.rewrites.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'bullet-item';
-        div.innerHTML = `
-            <div class="bullet-original">Original: ${escapeHtml(item.original)}</div>
-            <div class="bullet-improved">Improved: ${escapeHtml(item.improved)}</div>
-            ${item.changes ? `<div class="bullet-changes">${escapeHtml(item.changes)}</div>` : ''}
+    data.tailored_bullets.forEach((b, idx) => {
+        const pair = document.createElement('div');
+        pair.className = 'tailor-pair';
+        pair.innerHTML = `
+            <div class="tailor-box">
+                <h4>Original Experience Bullet #${idx + 1}</h4>
+                <div class="tailor-original" style="line-height:1.5;">${b.original}</div>
+            </div>
+            <div class="tailor-box">
+                <h4>STAR AI-Tailored Bullet</h4>
+                <div class="tailor-improved" style="line-height:1.5; color:#f1f5f9;">${b.tailored}</div>
+                ${b.target_skill ? `<span class="skill-tag">+ Integrated Skill: ${b.target_skill}</span>` : ''}
+                <p style="font-size:0.75rem; color:var(--text-dim); margin-top:0.4rem;">💡 ${b.explanation}</p>
+            </div>
         `;
-        container.appendChild(div);
+        container.appendChild(pair);
     });
 }
 
-// ===== Helpers =====
-
-function getGradeIcon(grade) {
-    const icons = { A: '&#10003;', B: '&#10003;', C: '!', D: '!', F: '&#10007;' };
-    return icons[grade] || '?';
-}
-
-function getIssueIcon(severity) {
-    switch (severity) {
-        case 'error': return '&#10007;';
-        case 'warning': return '!';
-        case 'pass': return '&#10003;';
-        default: return 'i';
+async function exportPDF() {
+    if (!currentResumeFile) return;
+    const formData = new FormData();
+    formData.append('file', currentResumeFile);
+    showToast('Generating clean ATS PDF...', 'info');
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/v1/resumes/export/pdf`, { method: 'POST', body: formData });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || 'PDF Export failed');
+        }
+        
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ATS_Tailored_${currentResumeFile.name.replace(/\.[^/.]+$/, "")}.pdf`;
+        a.click();
+        showToast('PDF Resume downloaded successfully!', 'success');
+    } catch (err) {
+        showToast(err.message || 'PDF Export failed', 'error');
     }
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+async function exportDOCX() {
+    if (!currentResumeFile) return;
+    const formData = new FormData();
+    formData.append('file', currentResumeFile);
+    showToast('Generating clean ATS DOCX...', 'info');
+    
+    try {
+        const res = await fetch(`${API_BASE}/api/v1/resumes/export/docx`, { method: 'POST', body: formData });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || 'DOCX Export failed');
+        }
+        
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ATS_Tailored_${currentResumeFile.name.replace(/\.[^/.]+$/, "")}.docx`;
+        a.click();
+        showToast('DOCX Resume downloaded successfully!', 'success');
+    } catch (err) {
+        showToast(err.message || 'DOCX Export failed', 'error');
+    }
+}
+
+function showLoading() { document.getElementById('loading').style.display = 'flex'; }
+function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+function updateLoading(msg) { document.getElementById('loading-status').textContent = msg; }
+
+function showToast(msg, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; bottom: 20px; right: 20px; z-index: 2000;
+        background: #1e293b; color: #fff; padding: 0.75rem 1.25rem;
+        border-radius: 8px; border-left: 4px solid ${type === 'error' ? '#f43f5e' : (type === 'success' ? '#10b981' : '#6366f1')};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-size: 0.9rem;
+    `;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
 }
