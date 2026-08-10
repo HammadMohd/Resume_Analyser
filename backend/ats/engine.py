@@ -44,7 +44,11 @@ class MultiATSResult(BaseModel):
 class MultiATSEmulator:
     """Emulates major ATS software parsers and evaluates compatibility."""
 
-    def evaluate_all(self, resume: NormalizedResume, jd: JobDescription | None = None) -> MultiATSResult:
+    def evaluate_all(
+        self,
+        resume: NormalizedResume,
+        jd: JobDescription | None = None,
+    ) -> MultiATSResult:
         """Run all ATS platform emulations on the normalized resume."""
         workday = self.evaluate_workday(resume, jd)
         greenhouse = self.evaluate_greenhouse(resume, jd)
@@ -73,7 +77,11 @@ class MultiATSEmulator:
             overall_recommendations=recommendations[:6],
         )
 
-    def evaluate_workday(self, resume: NormalizedResume, jd: JobDescription | None = None) -> ATSPlatformScore:
+    def evaluate_workday(
+        self,
+        resume: NormalizedResume,
+        jd: JobDescription | None = None,
+    ) -> ATSPlatformScore:
         """Workday: Layout structure, standard headers, table penalties."""
         score = 100.0
         warnings = []
@@ -81,7 +89,10 @@ class MultiATSEmulator:
 
         # Header check
         sections = [s.title.lower() for s in resume.sections_detected]
-        has_exp = any("experience" in s or "work" in s or "employment" in s for s in sections) or len(resume.experience) > 0
+        has_exp = (
+            any("experience" in s or "work" in s or "employment" in s for s in sections)
+            or len(resume.experience) > 0
+        )
         has_edu = any("education" in s for s in sections) or len(resume.education) > 0
         has_skills = any("skill" in s for s in sections) or len(resume.skills) > 0
 
@@ -110,7 +121,11 @@ class MultiATSEmulator:
             platform_warnings=warnings,
         )
 
-    def evaluate_greenhouse(self, resume: NormalizedResume, jd: JobDescription | None = None) -> ATSPlatformScore:
+    def evaluate_greenhouse(
+        self,
+        resume: NormalizedResume,
+        jd: JobDescription | None = None,
+    ) -> ATSPlatformScore:
         """Greenhouse: Keyword density & skill-to-experience context matching."""
         score = 85.0
         warnings = []
@@ -122,14 +137,22 @@ class MultiATSEmulator:
         all_exp_text_lower = all_exp_text.lower()
 
         skill_names = [s for cat in resume.skills for s in cat.skills]
-        context_skills_count = sum(1 for skill in skill_names if skill.lower() in all_exp_text_lower)
+        context_skills_count = sum(
+            1 for skill in skill_names if skill.lower() in all_exp_text_lower
+        )
 
         skill_context_ratio = context_skills_count / len(skill_names) if skill_names else 0.5
-        checks.append({"name": "Skills Embedded in Experience Context", "passed": skill_context_ratio > 0.4})
+        checks.append({
+            "name": "Skills Embedded in Experience Context",
+            "passed": skill_context_ratio > 0.4,
+        })
 
         if skill_context_ratio < 0.4:
             score -= 20.0
-            warnings.append("Greenhouse values skills demonstrated within job bullet context, not just listed in a skills block.")
+            warnings.append(
+                "Greenhouse values skills demonstrated within job bullet"
+                " context, not just listed in a skills block."
+            )
 
         if jd and jd.skills:
             required_skills = [s.name for s in jd.skills]
@@ -151,7 +174,11 @@ class MultiATSEmulator:
             platform_warnings=warnings,
         )
 
-    def evaluate_lever(self, resume: NormalizedResume, jd: JobDescription | None = None) -> ATSPlatformScore:
+    def evaluate_lever(
+        self,
+        resume: NormalizedResume,
+        jd: JobDescription | None = None,
+    ) -> ATSPlatformScore:
         """Lever: Contact detail placement, employment timeline & title clarity."""
         score = 90.0
         warnings = []
@@ -186,7 +213,11 @@ class MultiATSEmulator:
             platform_warnings=warnings,
         )
 
-    def evaluate_taleo(self, resume: NormalizedResume, jd: JobDescription | None = None) -> ATSPlatformScore:
+    def evaluate_taleo(
+        self,
+        resume: NormalizedResume,
+        jd: JobDescription | None = None,
+    ) -> ATSPlatformScore:
         """Taleo: Strict exact string matching, bullet length & special character rules."""
         score = 80.0
         warnings = []
@@ -210,13 +241,18 @@ class MultiATSEmulator:
 
         if jd and jd.keywords:
             jd_keywords = set(jd.keywords)
-            resume_text_lower = " ".join([b for exp in resume.experience for b in exp.bullets]).lower()
+            resume_text_lower = " ".join(
+                [b for exp in resume.experience for b in exp.bullets]
+            ).lower()
             matched = [k for k in jd_keywords if k.lower() in resume_text_lower]
             match_rate = len(matched) / len(jd_keywords) if jd_keywords else 1.0
             checks.append({"name": "Taleo Exact Keyword Match Rate", "passed": match_rate > 0.6})
             if match_rate < 0.6:
                 score -= 20.0
-                warnings.append("Taleo uses strict string matching. Include exact phrase keywords from the job description.")
+                warnings.append(
+                    "Taleo uses strict string matching. Include exact"
+                    " phrase keywords from the job description."
+                )
 
         score = max(0.0, round(score, 1))
         status = "Pass" if score >= 80 else ("Warning" if score >= 60 else "Fail")
@@ -229,7 +265,11 @@ class MultiATSEmulator:
             platform_warnings=warnings,
         )
 
-    def evaluate_icims(self, resume: NormalizedResume, jd: JobDescription | None = None) -> ATSPlatformScore:
+    def evaluate_icims(
+        self,
+        resume: NormalizedResume,
+        jd: JobDescription | None = None,
+    ) -> ATSPlatformScore:
         """iCIMS: Degree hierarchy, section clarity, keyword density check."""
         score = 85.0
         warnings = []
@@ -240,7 +280,10 @@ class MultiATSEmulator:
 
         if not has_degree:
             score -= 20.0
-            warnings.append("iCIMS auto-filters candidates based on degree requirements in Education section.")
+            warnings.append(
+                "iCIMS auto-filters candidates based on degree requirements"
+                " in Education section."
+            )
 
         score = max(0.0, round(score, 1))
         status = "Pass" if score >= 80 else ("Warning" if score >= 60 else "Fail")

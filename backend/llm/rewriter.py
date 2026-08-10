@@ -128,7 +128,10 @@ class BulletRewriter:
         words = original.split()
         if words and words[0].lower() not in _ACTION_VERBS:
             verb = "Implemented"
-            improved = f"{verb} {words[0].lower()} {' '.join(words[1:])}" if len(words) > 1 else f"{verb} {original.lower()}"
+            if len(words) > 1:
+                improved = f"{verb} {words[0].lower()} {' '.join(words[1:])}"
+            else:
+                improved = f"{verb} {original.lower()}"
             changes.append("Started with action verb")
 
         if len(improved) > 200:

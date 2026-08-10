@@ -23,7 +23,8 @@ if "user:password@localhost" in db_url:
     db_file = Path(__file__).parent.parent.parent / "resume_analyzer.db"
     db_url = f"sqlite+aiosqlite:///{db_file}"
 
-logger.info("Initializing database with engine URL: %s", db_url.split("@")[-1] if "@" in db_url else db_url)
+log_url = db_url.split("@")[-1] if "@" in db_url else db_url
+logger.info("Initializing database with engine URL: %s", log_url)
 
 engine = create_async_engine(
     db_url,

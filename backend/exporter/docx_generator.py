@@ -36,7 +36,10 @@ class DOCXResumeExporter:
 
         # Contact Info
         contact_p = doc.add_paragraph()
-        contact_str = f"{resume.contact.email or ''} | {resume.contact.phone or ''} | {resume.contact.location or ''}"
+        email = resume.contact.email or ""
+        phone = resume.contact.phone or ""
+        location = resume.contact.location or ""
+        contact_str = f"{email} | {phone} | {location}"
         contact_p.add_run(contact_str)
 
         # Experience
@@ -47,7 +50,11 @@ class DOCXResumeExporter:
                 p = doc.add_paragraph()
                 r1 = p.add_run(f"{exp.title} - {exp.company} ")
                 r1.bold = True
-                date_str = f"{exp.start_date} - {exp.end_date}".strip(" -") if (exp.start_date or exp.end_date) else ""
+                start = exp.start_date
+                end = exp.end_date
+                date_str = (
+                    f"{start} - {end}".strip(" -") if (start or end) else ""
+                )
                 if date_str:
                     r2 = p.add_run(f"({date_str})")
                     r2.italic = True
@@ -62,8 +69,17 @@ class DOCXResumeExporter:
             edu_h.runs[0].font.size = Pt(12)
             for edu in resume.education:
                 p = doc.add_paragraph()
-                edu_date = f"{edu.start_date} - {edu.end_date}".strip(" -") if (edu.start_date or edu.end_date) else ""
-                p.add_run(f"{edu.degree} - {edu.institution} ({edu_date})" if edu_date else f"{edu.degree} - {edu.institution}")
+                edu_start = edu.start_date
+                edu_end = edu.end_date
+                edu_date = (
+                    f"{edu_start} - {edu_end}".strip(" -")
+                    if (edu_start or edu_end)
+                    else ""
+                )
+                deg_inst = f"{edu.degree} - {edu.institution}"
+                p.add_run(
+                    f"{deg_inst} ({edu_date})" if edu_date else deg_inst
+                )
 
         # Skills
         if resume.skills:

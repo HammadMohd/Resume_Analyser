@@ -1,6 +1,5 @@
 """Resume Tailoring Service — orchestrates intelligent resume tailoring against job descriptions."""
 
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -62,7 +61,12 @@ class ResumeTailorService:
                     original=bullet,
                     tailored=enhanced.star_bullet,
                     target_skill=target_skill,
-                    explanation=f"Rebuilt with STAR framework and integrated missing JD skill '{target_skill}'" if target_skill else "Rebuilt with STAR framework and metrics",
+                    explanation=(
+                        f"Rebuilt with STAR framework and integrated missing "
+                        f"JD skill '{target_skill}'"
+                        if target_skill
+                        else "Rebuilt with STAR framework and metrics"
+                    ),
                 )
             )
 
@@ -73,5 +77,8 @@ class ResumeTailorService:
             missing_skills_targeted=missing_skills[:5],
             tailored_bullets=tailored_results,
             predicted_score_boost=round(predicted_boost, 1),
-            summary=f"Successfully tailored experience bullets to incorporate {len(missing_skills[:5])} missing target skills.",
+            summary=(
+                f"Successfully tailored experience bullets to incorporate "
+                f"{len(missing_skills[:5])} missing target skills."
+            ),
         )

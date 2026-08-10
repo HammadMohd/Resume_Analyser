@@ -444,7 +444,11 @@ async def export_resume_pdf(
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=ats_tailored_{file.filename or 'resume.pdf'}"},
+            headers={
+                "Content-Disposition": (
+                    f"attachment; filename=ats_tailored_{file.filename or 'resume.pdf'}"
+                )
+            },
         )
     except Exception as e:
         logger.exception("PDF export error: %s", str(e))
@@ -482,7 +486,11 @@ async def export_resume_docx(
         return Response(
             content=docx_bytes,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            headers={"Content-Disposition": f"attachment; filename=ats_tailored_{file.filename or 'resume.docx'}"},
+            headers={
+                "Content-Disposition": (
+                    f"attachment; filename=ats_tailored_{file.filename or 'resume.docx'}"
+                )
+            },
         )
     except Exception as e:
         logger.exception("DOCX export error: %s", str(e))

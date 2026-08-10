@@ -1,7 +1,7 @@
 """Unit tests for Impact Analysis and AI STAR Tailoring."""
 
 from backend.llm.star_rewriter import STARBulletEnhancer
-from backend.schemas.jd import JobDescription, JDSkill
+from backend.schemas.jd import JDSkill, JobDescription
 from backend.schemas.resume import ContactInfo, Experience, NormalizedResume, SkillCategory
 from backend.scoring.impact_analyzer import ImpactAnalyzer
 from backend.services.tailor_service import ResumeTailorService

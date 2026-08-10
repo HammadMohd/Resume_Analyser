@@ -7,7 +7,6 @@ Evaluates resume experience bullets for:
 """
 
 import re
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -91,7 +90,11 @@ class ImpactAnalyzer:
             if verb_strength == "Strong":
                 strong_verb_count += 1
 
-            buzzwords = [bw for bw in BUZZWORDS if re.search(r"\b" + re.escape(bw) + r"\b", b.lower())]
+            buzzwords = [
+                bw
+                for bw in BUZZWORDS
+                if re.search(r"\b" + re.escape(bw) + r"\b", b.lower())
+            ]
             all_found_buzzwords.update(buzzwords)
 
             bullet_analyses.append(
@@ -110,9 +113,15 @@ class ImpactAnalyzer:
 
         tips = []
         if quant_ratio < 0.4:
-            tips.append("Only {:.0f}% of your bullets have numbers. Include metrics (e.g. 'Increased speed by 35%')".format(quant_ratio * 100))
+            tips.append(
+                f"Only {quant_ratio * 100:.0f}% of your bullets have numbers. "
+                f"Include metrics (e.g. 'Increased speed by 35%')"
+            )
         if strong_ratio < 0.5:
-            tips.append("Use stronger action verbs like 'Engineered', 'Spearheaded', or 'Orchestrated' instead of 'Worked on'.")
+            tips.append(
+                "Use stronger action verbs like 'Engineered', 'Spearheaded', or "
+                "'Orchestrated' instead of 'Worked on'."
+            )
         if all_found_buzzwords:
             tips.append(f"Remove generic buzzwords: {', '.join(list(all_found_buzzwords)[:3])}.")
 
@@ -133,7 +142,9 @@ class ImpactAnalyzer:
             r"\b\d+%",  # 35%
             r"\$\d+[\d,]*[kKmMbB]?",  # $50k or $1,000
             r"\b\d+x\b",  # 10x
-            r"\b\d+[\d,]*\s*(users|clients|customers|requests|transactions|projects|servers|services|engineers|microservices|ms|seconds|hours|days|months|years|x)\b",
+            r"\b\d+[\d,]*\s*(users|clients|customers|requests|transactions|"
+            r"projects|servers|services|engineers|microservices|ms|seconds|"
+            r"hours|days|months|years|x)\b",
         ]
         matches = []
         for p in patterns:

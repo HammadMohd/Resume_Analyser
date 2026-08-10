@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.models.analysis import AnalysisModel
 from backend.models.job_description import JobDescriptionModel
 from backend.models.resume import ResumeModel
-from backend.models.tailored_resume import TailoredResumeModel
 from backend.utils.logging import get_logger
 
 logger = get_logger(__name__)

@@ -49,11 +49,14 @@ class STARBulletEnhancer:
         """Call Gemini API with structured STAR prompt."""
         try:
             import google.generativeai as genai
+
             from backend.config.settings import settings
 
             prompt = f"""You are an elite executive resume writer and ATS optimization expert.
-Rewrite the following resume bullet point using the STAR (Situation, Task, Action, Result) methodology.
-Ensure it begins with a high-impact action verb and includes quantifiable metrics (e.g. percentages, latency improvements, scale).
+Rewrite the following resume bullet point using the STAR \
+(Situation, Task, Action, Result) methodology.
+Ensure it begins with a high-impact action verb and includes \
+quantifiable metrics (e.g. percentages, latency improvements, scale).
 
 Original Bullet: "{original}"
 Target Skill to Incorporate: "{target_skill or 'None'}"
@@ -97,10 +100,16 @@ Return ONLY a valid JSON object matching this schema:
         if words:
             verb = verbs[len(original) % len(verbs)]
             first_word_lower = words[0].lower()
-            if first_word_lower in {"selected", "worked", "helped", "assisted", "responsible", "handled"}:
+            if first_word_lower in {
+                "selected", "worked", "helped",
+                "assisted", "responsible", "handled",
+            }:
                 improved = f"{verb} {words[0].lower()} {' '.join(words[1:])}"
                 changes.append("Transformed leading verb to high-impact action verb.")
-            elif first_word_lower not in {"engineered", "spearheaded", "orchestrated", "overhauled", "automated", "built", "developed"}:
+            elif first_word_lower not in {
+                "engineered", "spearheaded", "orchestrated",
+                "overhauled", "automated", "built", "developed",
+            }:
                 improved = f"{verb} {' '.join(words)}"
                 changes.append("Added high-impact action verb.")
 

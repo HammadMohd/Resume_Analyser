@@ -2,7 +2,13 @@
 
 from backend.exporter.docx_generator import DOCXResumeExporter
 from backend.exporter.pdf_generator import PDFResumeExporter
-from backend.schemas.resume import ContactInfo, Education, Experience, NormalizedResume, SkillCategory
+from backend.schemas.resume import (
+    ContactInfo,
+    Education,
+    Experience,
+    NormalizedResume,
+    SkillCategory,
+)
 
 
 def test_pdf_exporter():
@@ -19,7 +25,14 @@ def test_pdf_exporter():
                 bullets=["Built microservices with FastAPI and Python."],
             )
         ],
-        education=[Education(degree="BS Computer Science", institution="University X", start_date="2016", end_date="2020")],
+        education=[
+            Education(
+                degree="BS Computer Science",
+                institution="University X",
+                start_date="2016",
+                end_date="2020",
+            )
+        ],
         skills=[SkillCategory(category="Languages", skills=["Python", "SQL"])],
     )
 

@@ -13,8 +13,18 @@ class TailoredResumeModel(Base):
 
     __tablename__ = "tailored_resumes"
 
-    resume_id: Mapped[str] = mapped_column(String(255), ForeignKey("resumes.id", ondelete="CASCADE"), nullable=False, index=True)
-    jd_id: Mapped[str | None] = mapped_column(String(255), ForeignKey("job_descriptions.id", ondelete="SET NULL"), nullable=True, index=True)
+    resume_id: Mapped[str] = mapped_column(
+        String(255),
+        ForeignKey("resumes.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    jd_id: Mapped[str | None] = mapped_column(
+        String(255),
+        ForeignKey("job_descriptions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     title: Mapped[str] = mapped_column(String(255), nullable=False, default="Tailored Version")
     tailored_text: Mapped[str] = mapped_column(Text, nullable=False)

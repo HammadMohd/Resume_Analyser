@@ -79,7 +79,10 @@ class PDFResumeExporter:
         )
 
         # Header Contact
-        contact_str = f"{resume.contact.email or ''} | {resume.contact.phone or ''} | {resume.contact.location or ''}"
+        email = resume.contact.email or ""
+        phone = resume.contact.phone or ""
+        location = resume.contact.location or ""
+        contact_str = f"{email} | {phone} | {location}"
         story.append(Paragraph(resume.contact.name or "Candidate Resume", title_style))
         story.append(Paragraph(contact_str, subtitle_style))
         story.append(Spacer(1, 6))
@@ -88,8 +91,24 @@ class PDFResumeExporter:
         if resume.experience:
             story.append(Paragraph("WORK EXPERIENCE", section_style))
             for exp in resume.experience:
-                date_str = f"{exp.start_date} - {exp.end_date}".strip(" -") if (exp.start_date or exp.end_date) else ""
-                role_header = f"<b>{exp.title}</b> &mdash; <i>{exp.company}</i> ({date_str})" if date_str else f"<b>{exp.title}</b> &mdash; <i>{exp.company}</i>"
+                exp_start = exp.start_date
+                exp_end = exp.end_date
+                date_str = (
+                    f"{exp_start} - {exp_end}".strip(" -")
+                    if (exp_start or exp_end)
+                    else ""
+                )
+                title_bold = f"<b>{exp.title}</b>"
+                company_it = f"<i>{exp.company}</i>"
+                if date_str:
+                    role_header = (
+                        f"{title_bold} &mdash; {company_it}"
+                        f" ({date_str})"
+                    )
+                else:
+                    role_header = (
+                        f"{title_bold} &mdash; {company_it}"
+                    )
                 story.append(Paragraph(role_header, body_style))
                 for bullet in exp.bullets:
                     story.append(Paragraph(f"&bull; {bullet}", body_style))
@@ -99,8 +118,23 @@ class PDFResumeExporter:
         if resume.education:
             story.append(Paragraph("EDUCATION", section_style))
             for edu in resume.education:
-                edu_date = f"{edu.start_date} - {edu.end_date}".strip(" -") if (edu.start_date or edu.end_date) else ""
-                edu_header = f"<b>{edu.degree}</b> &mdash; {edu.institution} ({edu_date})" if edu_date else f"<b>{edu.degree}</b> &mdash; {edu.institution}"
+                edu_start = edu.start_date
+                edu_end = edu.end_date
+                edu_date = (
+                    f"{edu_start} - {edu_end}".strip(" -")
+                    if (edu_start or edu_end)
+                    else ""
+                )
+                deg_bold = f"<b>{edu.degree}</b>"
+                if edu_date:
+                    edu_header = (
+                        f"{deg_bold} &mdash;"
+                        f" {edu.institution} ({edu_date})"
+                    )
+                else:
+                    edu_header = (
+                        f"{deg_bold} &mdash; {edu.institution}"
+                    )
                 story.append(Paragraph(edu_header, body_style))
 
         # Skills

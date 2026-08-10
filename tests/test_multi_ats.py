@@ -1,7 +1,13 @@
 """Unit tests for Multi-ATS emulation engine."""
 
 from backend.ats.engine import MultiATSEmulator
-from backend.schemas.resume import ContactInfo, Experience, NormalizedResume, ResumeSection, SkillCategory
+from backend.schemas.resume import (
+    ContactInfo,
+    Experience,
+    NormalizedResume,
+    ResumeSection,
+    SkillCategory,
+)
 
 
 def test_multi_ats_emulator_all_pass():
@@ -21,7 +27,8 @@ def test_multi_ats_emulator_all_pass():
                 company="Tech Corp",
                 location="San Francisco, CA",
                 bullets=[
-                    "Engineered distributed backend microservices handling 50k requests/sec using Python and FastAPI.",
+                    "Engineered distributed backend microservices "
+                    "handling 50k requests/sec using Python and FastAPI.",
                     "Spearheaded cloud migration to AWS reducing hosting costs by 35%.",
                 ],
             )
