@@ -3,7 +3,7 @@
 This router owns all rewrite-related endpoints under /api/v1/rewrite.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import JSONResponse
 
 from backend.llm.rewriter import BulletRewriter
@@ -162,3 +162,56 @@ async def validate_bullet(
                 "errors": None,
             },
         )
+
+
+@router.post("/tailor")
+async def tailor_resume_to_jd(
+    resume: UploadFile = File(...),
+    jd: UploadFile = File(...),
+) -> JSONResponse:
+    """Tailor experience bullet points to match a target job description using STAR framework."""
+    from backend.jd.jd_parser import JDParser
+    from backend.parser.resume_parser import ResumeParser
+    from backend.parser.structured_parser import StructuredParser
+    from backend.services.tailor_service import ResumeTailorService
+    from backend.services.upload_service import UploadService
+
+    upload_service = UploadService()
+    parser = ResumeParser()
+    structured_parser = StructuredParser()
+    jd_parser = JDParser()
+    tailor_service = ResumeTailorService()
+
+    try:
+        # Parse resume
+        resume_result = await upload_service.upload_resume(resume)
+        stored_filename = resume_result["data"]["stored_filename"]
+        file_path = f"uploads/resumes/{stored_filename}"
+        parsed_resume = parser.parse(file_path, resume.filename or "unknown")
+        normalized_resume = structured_parser.parse_resume(
+            text=parsed_resume.full_text,
+            filename=resume.filename or "unknown",
+        )
+
+        # Parse JD
+        jd_content = await jd.read()
+        jd_text = jd_content.decode("utf-8", errors="ignore")
+        parsed_jd = jd_parser.parse(jd_text, title=jd.filename or "")
+
+        tailored_response = tailor_service.tailor_resume(normalized_resume, parsed_jd)
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "message": "Resume tailored successfully",
+                "data": tailored_response.model_dump(),
+            },
+        )
+    except Exception as e:
+        logger.exception("Tailoring error: %s", str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"Tailor error: {str(e)}", "errors": None},
+        )
+

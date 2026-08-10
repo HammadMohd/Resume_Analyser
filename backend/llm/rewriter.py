@@ -121,21 +121,16 @@ class BulletRewriter:
 
     def _rewrite_with_rules(self, request: BulletRewriteRequest) -> BulletRewriteResponse:
         """Rule-based rewrite without LLM."""
-        original = request.original
+        original = request.original.strip()
         improved = original
         changes = []
 
-        # Ensure starts with action verb
         words = original.split()
         if words and words[0].lower() not in _ACTION_VERBS:
-            # Try to find a suitable verb
-            for verb in ["Implemented", "Developed", "Built", "Led", "Improved"]:
-                if verb.lower() in original.lower():
-                    improved = verb + " " + original.lower().split(verb.lower(), 1)[-1].strip()
-                    changes.append("Started with action verb")
-                    break
+            verb = "Implemented"
+            improved = f"{verb} {words[0].lower()} {' '.join(words[1:])}" if len(words) > 1 else f"{verb} {original.lower()}"
+            changes.append("Started with action verb")
 
-        # Ensure reasonable length
         if len(improved) > 200:
             improved = improved[:197] + "..."
             changes.append("Trimmed to appropriate length")
@@ -148,6 +143,7 @@ class BulletRewriter:
             changes_made=changes,
             confidence=confidence,
         )
+
 
 
 # Action verbs for rule-based fallback

@@ -158,3 +158,92 @@ async def analyze_text(
                 "errors": None,
             },
         )
+
+
+@router.post("/multi-ats")
+async def analyze_multi_ats(
+    resume: UploadFile = File(...),
+    jd: UploadFile | None = File(default=None),
+) -> JSONResponse:
+    """Analyze resume across 5 top ATS platforms (Workday, Greenhouse, Lever, Taleo, iCIMS)."""
+    from backend.ats.engine import MultiATSEmulator
+
+    upload_service = UploadService()
+    parser = ResumeParser()
+    structured_parser = StructuredParser()
+    jd_parser = JDParser()
+    emulator = MultiATSEmulator()
+
+    try:
+        resume_result = await upload_service.upload_resume(resume)
+        stored_filename = resume_result["data"]["stored_filename"]
+        file_path = f"uploads/resumes/{stored_filename}"
+        parsed_resume = parser.parse(file_path, resume.filename or "unknown")
+        normalized_resume = structured_parser.parse_resume(
+            text=parsed_resume.full_text,
+            filename=resume.filename or "unknown",
+        )
+
+        parsed_jd = None
+        if jd:
+            jd_content = await jd.read()
+            jd_text = jd_content.decode("utf-8", errors="ignore")
+            parsed_jd = jd_parser.parse(jd_text, title=jd.filename or "")
+
+        multi_result = emulator.evaluate_all(normalized_resume, parsed_jd)
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "message": "Multi-ATS analysis completed successfully",
+                "data": multi_result.model_dump(),
+            },
+        )
+    except Exception as e:
+        logger.exception("Multi-ATS scoring error: %s", str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"Error: {str(e)}", "errors": None},
+        )
+
+
+@router.post("/impact")
+async def analyze_impact(
+    resume: UploadFile = File(...),
+) -> JSONResponse:
+    """Analyze bullet point metric quantification, verb strength, and readability."""
+    from backend.scoring.impact_analyzer import ImpactAnalyzer
+
+    upload_service = UploadService()
+    parser = ResumeParser()
+    structured_parser = StructuredParser()
+    analyzer = ImpactAnalyzer()
+
+    try:
+        resume_result = await upload_service.upload_resume(resume)
+        stored_filename = resume_result["data"]["stored_filename"]
+        file_path = f"uploads/resumes/{stored_filename}"
+        parsed_resume = parser.parse(file_path, resume.filename or "unknown")
+        normalized_resume = structured_parser.parse_resume(
+            text=parsed_resume.full_text,
+            filename=resume.filename or "unknown",
+        )
+
+        impact_result = analyzer.analyze(normalized_resume)
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "message": "Impact analysis completed successfully",
+                "data": impact_result.model_dump(),
+            },
+        )
+    except Exception as e:
+        logger.exception("Impact analysis error: %s", str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"Error: {str(e)}", "errors": None},
+        )
+

@@ -414,3 +414,80 @@ async def validate_resume(
                 "errors": None,
             },
         )
+
+
+@router.post("/export/pdf")
+async def export_resume_pdf(
+    file: UploadFile = File(...),
+):
+    """Parse resume and export an ATS-compliant PDF document."""
+    from fastapi.responses import Response
+
+    from backend.exporter.pdf_generator import PDFResumeExporter
+
+    upload_service = UploadService()
+    parser = ResumeParser()
+    structured_parser = StructuredParser()
+    exporter = PDFResumeExporter()
+
+    try:
+        upload_result = await upload_service.upload_resume(file)
+        stored_filename = upload_result["data"]["stored_filename"]
+        file_path = f"uploads/resumes/{stored_filename}"
+        parsed = parser.parse(file_path, file.filename or "unknown")
+        normalized = structured_parser.parse_resume(
+            text=parsed.full_text,
+            filename=file.filename or "unknown",
+        )
+
+        pdf_bytes = exporter.export_pdf(normalized)
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=ats_tailored_{file.filename or 'resume.pdf'}"},
+        )
+    except Exception as e:
+        logger.exception("PDF export error: %s", str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"Export error: {str(e)}", "errors": None},
+        )
+
+
+@router.post("/export/docx")
+async def export_resume_docx(
+    file: UploadFile = File(...),
+):
+    """Parse resume and export an ATS-compliant DOCX document."""
+    from fastapi.responses import Response
+
+    from backend.exporter.docx_generator import DOCXResumeExporter
+
+    upload_service = UploadService()
+    parser = ResumeParser()
+    structured_parser = StructuredParser()
+    exporter = DOCXResumeExporter()
+
+    try:
+        upload_result = await upload_service.upload_resume(file)
+        stored_filename = upload_result["data"]["stored_filename"]
+        file_path = f"uploads/resumes/{stored_filename}"
+        parsed = parser.parse(file_path, file.filename or "unknown")
+        normalized = structured_parser.parse_resume(
+            text=parsed.full_text,
+            filename=file.filename or "unknown",
+        )
+
+        docx_bytes = exporter.export_docx(normalized)
+        return Response(
+            content=docx_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f"attachment; filename=ats_tailored_{file.filename or 'resume.docx'}"},
+        )
+    except Exception as e:
+        logger.exception("DOCX export error: %s", str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"Export error: {str(e)}", "errors": None},
+        )
+

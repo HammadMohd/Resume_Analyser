@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume ATS Analyzer</title>
+    <title>Resume ATS Analyzer & AI Tailoring Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,175 +12,151 @@
 </head>
 <body>
     <div class="app">
-        <header class="hero">
-            <div class="hero-content">
-                <div class="logo">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                        <rect width="32" height="32" rx="8" fill="#6366f1"/>
-                        <path d="M8 10h16M8 16h12M8 22h8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-                    </svg>
-                    <span class="logo-text">ATS Analyzer</span>
-                </div>
-                <h1>Is your resume <span class="gradient-text">ATS-ready</span>?</h1>
-                <p class="hero-sub">Get an instant compatibility score. Identify issues. Fix them before you apply.</p>
+        <!-- Header -->
+        <header class="navbar">
+            <div class="logo">
+                <svg width="36" height="36" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#6366f1"/>
+                    <path d="M8 10h16M8 16h12M8 22h8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+                <span class="logo-text">ATS Analyzer & AI Studio</span>
             </div>
+            <span class="version-badge">Multi-ATS Engine v2.0</span>
         </header>
 
+        <section class="hero">
+            <h1>Is your resume <span class="gradient-text">ATS-Proof</span>?</h1>
+            <p class="hero-sub">Simulate top ATS software (Workday, Greenhouse, Lever, Taleo, iCIMS). Tailor bullets with AI. Export clean resumes.</p>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="upload-tab">📤 Upload & Audit</button>
+            <button class="tab-btn" data-tab="overview-tab">📊 Overview Score</button>
+            <button class="tab-btn" data-tab="multi-ats-tab">🎯 Multi-ATS Simulation</button>
+            <button class="tab-btn" data-tab="impact-tab">⚡ Impact & Metrics</button>
+            <button class="tab-btn" data-tab="tailor-tab">🪄 AI Tailoring Studio</button>
+            <button class="tab-btn" data-tab="export-tab">📄 Export & Download</button>
+        </nav>
+
         <main class="main-content">
-            <!-- Upload Section -->
-            <section class="upload-card" id="upload-section">
-                <div class="upload-zone" id="drop-zone">
-                    <div class="upload-icon">
-                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                            <path d="M24 32V16M24 16l-8 8M24 16l8 8" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
+            <!-- 1. Upload Tab -->
+            <div class="tab-pane active" id="upload-tab">
+                <section class="glass-card">
+                    <div class="upload-zone" id="drop-zone">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                <path d="M24 32V16M24 16l-8 8M24 16l8 8" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="upload-text">Drag & drop your resume here</p>
+                        <p class="upload-sub">PDF or DOCX up to 10MB</p>
+                        <input type="file" id="resume-file" accept=".pdf,.docx" class="file-input">
                     </div>
-                    <p class="upload-text">Drag & drop your resume here</p>
-                    <p class="upload-sub">or click to browse</p>
-                    <p class="upload-formats">PDF, DOCX up to 10MB</p>
-                    <input type="file" id="resume-file" accept=".pdf,.docx" class="file-input">
-                </div>
-                <div class="file-selected" id="file-selected" style="display:none;">
-                    <div class="file-info">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M4 2h8l4 4v12a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="#6366f1" stroke-width="1.5"/>
-                            <path d="M12 2v4h4" stroke="#6366f1" stroke-width="1.5"/>
-                        </svg>
-                        <span id="file-name"></span>
-                        <button class="remove-file" id="remove-file" title="Remove file">&times;</button>
+
+                    <div class="file-selected" id="file-selected" style="display:none; margin-top:1rem;">
+                        <span id="file-name" style="font-weight:600;"></span>
+                        <button class="btn-secondary" id="remove-file" style="margin-left:1rem; padding:0.3rem 0.6rem;">&times; Remove</button>
                     </div>
-                </div>
 
-                <div class="jd-section">
-                    <label class="jd-label" for="jd-text">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <rect x="2" y="1" width="12" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                            <path d="M5 5h6M5 8h4M5 11h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                        Job Description
-                        <span class="optional-badge">Optional</span>
-                    </label>
-                    <textarea id="jd-text" rows="4" placeholder="Paste the job description to get a targeted ATS score..."></textarea>
-                </div>
+                    <div class="jd-section">
+                        <label class="jd-label" for="jd-text">Target Job Description (Optional for targeted matching)</label>
+                        <textarea id="jd-text" class="jd-textarea" placeholder="Paste target Job Description text here..."></textarea>
+                    </div>
 
-                <button id="analyze-btn" disabled class="analyze-btn">
-                    <span class="btn-text">Analyze Resume</span>
-                    <svg class="btn-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-            </section>
+                    <div class="actions-bar">
+                        <button id="analyze-btn" disabled class="btn-primary">
+                            <span>Analyze Resume</span> &rarr;
+                        </button>
+                    </div>
+                </section>
+            </div>
 
-            <!-- Loading -->
+            <!-- Loading Spinner -->
             <div class="loading-overlay" id="loading" style="display:none;">
-                <div class="loading-content">
-                    <div class="loading-spinner"></div>
-                    <p class="loading-title">Analyzing your resume...</p>
-                    <p class="loading-sub" id="loading-status">Extracting content</p>
+                <div class="loading-box">
+                    <div class="spinner"></div>
+                    <h3 style="margin-bottom:0.5rem;">Analyzing Resume...</h3>
+                    <p id="loading-status" style="color:var(--text-muted);">Running multi-ATS parsers</p>
                 </div>
             </div>
 
-            <!-- Toast container -->
+            <!-- Toast Container -->
             <div id="toast-container"></div>
 
-            <!-- Results -->
-            <section class="results" id="results" style="display:none;">
-
-                <!-- Score Hero -->
-                <div class="score-hero" id="score-hero">
-                    <div class="score-ring-wrap">
-                        <canvas id="score-chart" width="200" height="200"></canvas>
-                        <div class="score-center">
-                            <span class="score-value" id="score-value">--</span>
-                            <span class="score-grade" id="score-grade"></span>
+            <!-- 2. Overview Tab -->
+            <div class="tab-pane" id="overview-tab" style="display:none;">
+                <section class="glass-card">
+                    <div class="score-hero-container">
+                        <div style="position:relative; width:180px; height:180px;">
+                            <canvas id="score-chart" width="180" height="180"></canvas>
+                            <div class="score-center-value">
+                                <span class="score-num" id="score-value">--</span>
+                                <span class="score-grade-badge" id="score-grade"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <h2>ATS Readiness Score</h2>
+                            <p id="score-subtitle" style="color:var(--text-muted); margin-bottom:1rem;">Overall ATS score across keyword matching, layout integrity, and rules.</p>
+                            <div id="recs-card">
+                                <ul id="recs-list" style="padding-left:1.2rem; color:var(--accent-amber);"></ul>
+                            </div>
                         </div>
                     </div>
-                    <div class="score-meta">
-                        <h2 class="score-title">ATS Compatibility Score</h2>
-                        <p class="score-subtitle" id="score-subtitle">Based on keyword matching, structure, and formatting</p>
-                    </div>
-                </div>
+                </section>
 
-                <!-- Recommendations -->
-                <div class="recs-card" id="recs-card" style="display:none;">
-                    <h3 class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                            <circle cx="9" cy="9" r="8" stroke="#f59e0b" stroke-width="1.5"/>
-                            <path d="M9 5v5M9 12v.5" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                        Recommendations
-                    </h3>
-                    <ul id="recs-list"></ul>
-                </div>
-
-                <!-- Breakdown -->
-                <div class="breakdown-card" id="breakdown-card" style="display:none;">
-                    <h3 class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                            <rect x="1" y="10" width="4" height="7" rx="1" fill="#6366f1"/>
-                            <rect x="7" y="6" width="4" height="11" rx="1" fill="#6366f1" opacity="0.7"/>
-                            <rect x="13" y="2" width="4" height="15" rx="1" fill="#6366f1" opacity="0.4"/>
-                        </svg>
-                        Score Breakdown
-                    </h3>
+                <section class="glass-card">
+                    <h3>Score Breakdown</h3>
                     <div id="breakdown"></div>
-                </div>
+                </section>
+            </div>
 
-                <!-- Skills -->
-                <div class="skills-card" id="skills-card" style="display:none;">
-                    <h3 class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                            <path d="M9 1l2.47 5.01L17 6.64l-4 3.9.94 5.51L9 13.77l-4.94 2.28L5 10.54l-4-3.9 5.53-.63z" stroke="#6366f1" stroke-width="1.5" fill="none"/>
-                        </svg>
-                        Skills Analysis
-                    </h3>
-                    <div class="skills-section" id="extracted-skills-section"></div>
-                    <div class="skills-section" id="matched-skills-section" style="display:none;"></div>
-                    <div class="skills-section" id="missing-skills-section" style="display:none;"></div>
-                </div>
+            <!-- 3. Multi-ATS Simulation Tab -->
+            <div class="tab-pane" id="multi-ats-tab" style="display:none;">
+                <section class="glass-card">
+                    <h2>Multi-ATS Platform Emulation</h2>
+                    <p style="color:var(--text-muted); margin-bottom:1rem;">Simulated parsing compatibility across top enterprise ATS platforms.</p>
+                    <div class="ats-grid" id="ats-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+            </div>
 
-                <!-- Contact Info -->
-                <div class="contact-card" id="contact-card" style="display:none;">
-                    <h3 class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                            <rect x="2" y="3" width="14" height="12" rx="2" stroke="#6366f1" stroke-width="1.5"/>
-                            <path d="M2 6l7 4 7-4" stroke="#6366f1" stroke-width="1.5"/>
-                        </svg>
-                        Contact Information
-                    </h3>
-                    <div id="contact-info"></div>
-                </div>
+            <!-- 4. Impact & Metrics Tab -->
+            <div class="tab-pane" id="impact-tab" style="display:none;">
+                <section class="glass-card">
+                    <h2>Impact Quantification & Action Verbs</h2>
+                    <div id="impact-content" style="margin-top:1rem;">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+            </div>
 
-                <!-- Validation -->
-                <div class="validation-card" id="validation-card" style="display:none;">
-                    <h3 class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                            <path d="M9 1l7 4v6l-7 4-7-4V5z" stroke="#6366f1" stroke-width="1.5"/>
-                            <path d="M6 9l2 2 4-4" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        Resume Validation
-                        <span class="issue-count" id="issue-count" style="display:none;"></span>
-                    </h3>
-                    <div id="validation"></div>
-                </div>
+            <!-- 5. AI Tailoring Studio Tab -->
+            <div class="tab-pane" id="tailor-tab" style="display:none;">
+                <section class="glass-card">
+                    <h2>AI Interactive Resume Tailoring Studio</h2>
+                    <p style="color:var(--text-muted); margin-bottom:1.5rem;">Auto-incorporates missing target JD skills into experience bullets using STAR methodology.</p>
+                    <div id="tailor-content">
+                        <p style="color:var(--text-dim);">Upload a resume and job description to unlock STAR tailoring.</p>
+                    </div>
+                </section>
+            </div>
 
-                <!-- Bullets -->
-                <div class="bullets-card" id="bullets-card" style="display:none;">
-                    <h3 class="card-title">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                            <path d="M3 3h12M3 7h10M3 11h8M3 15h6" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                        Bullet Suggestions
-                    </h3>
-                    <div id="bullets"></div>
-                </div>
-            </section>
+            <!-- 6. Export Tab -->
+            <div class="tab-pane" id="export-tab" style="display:none;">
+                <section class="glass-card" style="text-align:center; padding:3rem 1.5rem;">
+                    <h2>Export ATS-Compliant Resume</h2>
+                    <p style="color:var(--text-muted); margin-bottom:2rem;">Download your tailored resume formatted in a clean single-column layout tested against all major ATS parsers.</p>
+                    <div style="display:flex; justify-content:center; gap:1.5rem;">
+                        <button id="download-pdf-btn" class="btn-primary" disabled>📥 Download Clean PDF</button>
+                        <button id="download-docx-btn" class="btn-secondary" disabled>📄 Download Clean DOCX</button>
+                    </div>
+                </section>
+            </div>
+
         </main>
-
-        <footer class="footer">
-            <p>Resume ATS Analyzer &mdash; Deterministic-First Analysis</p>
-        </footer>
     </div>
 
     <script src="app.js"></script>
