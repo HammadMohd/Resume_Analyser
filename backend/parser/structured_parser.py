@@ -235,6 +235,17 @@ class StructuredParser:
             if bullet_match:
                 if current:
                     current.bullets.append(bullet_match.group(1))
+                else:
+                    # Bullet before any header — create a default entry
+                    current = Experience(
+                        company="",
+                        title="",
+                        location="",
+                        start_date="",
+                        end_date="",
+                        description="",
+                    )
+                    current.bullets.append(bullet_match.group(1))
                 continue
 
             # Check for date range (indicates new entry or header)

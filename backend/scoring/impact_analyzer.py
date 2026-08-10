@@ -142,9 +142,12 @@ class ImpactAnalyzer:
             r"\b\d+%",  # 35%
             r"\$\d+[\d,]*[kKmMbB]?",  # $50k or $1,000
             r"\b\d+x\b",  # 10x
+            r"\b\d+\+",  # 50+
             r"\b\d+[\d,]*\s*(users|clients|customers|requests|transactions|"
             r"projects|servers|services|engineers|microservices|ms|seconds|"
-            r"hours|days|months|years|x)\b",
+            r"hours|days|months|years|functions|modules|tests|cases|records|"
+            r"endpoints|api|apis|features|bugs|issues|tickets|PRs|commits|"
+            r"repos|repositories|teams|people|members|students|learners)\b",
         ]
         matches = []
         for p in patterns:
