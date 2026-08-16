@@ -284,9 +284,9 @@ class StructuredParser:
                 current.end_date = date_match.group(2) if date_match else ""
 
                 # Try to split company and title
-                parts = self._split_company_title(stripped, date_match)
-                current.company = parts.get("company", "")
-                current.title = parts.get("title", "")
+                company_title = self._split_company_title(stripped, date_match)
+                current.company = company_title.get("company", "")
+                current.title = company_title.get("title", "")
 
             # Check if line looks like a company (contains "|" or "at")
             elif current and current.title and not current.company:
