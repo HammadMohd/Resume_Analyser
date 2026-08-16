@@ -251,6 +251,24 @@ class StructuredParser:
             # Check for date range (indicates new entry or header)
             date_match = DATE_RANGE_PATTERN.search(stripped)
             if date_match or self._looks_like_job_header(stripped):
+                # If current entry has title but no date, and this line has a date,
+                # merge into current entry instead of creating new
+                if current and current.title and not current.start_date and date_match:
+                    current.start_date = date_match.group(1)
+                    current.end_date = date_match.group(2)
+                    # Try to extract company from the remaining text before date
+                    before_date = stripped[:date_match.start()].strip().rstrip(",").strip()
+                    if before_date and not current.company:
+                        for sep in [" at ", " @ ", " | ", " - ", " — "]:
+                            if sep in before_date:
+                                parts = before_date.split(sep, 1)
+                                current.company = parts[0].strip()
+                                current.location = parts[1].strip()
+                                break
+                        if not current.company:
+                            current.company = before_date
+                    continue
+
                 if current:
                     entries.append(current)
 
@@ -269,6 +287,17 @@ class StructuredParser:
                 parts = self._split_company_title(stripped, date_match)
                 current.company = parts.get("company", "")
                 current.title = parts.get("title", "")
+
+            # Check if line looks like a company (contains "|" or "at")
+            elif current and current.title and not current.company:
+                for sep in [" at ", " @ ", " | "]:
+                    if sep in stripped:
+                        parts = stripped.split(sep, 1)
+                        current.company = parts[0].strip()
+                        current.location = parts[1].strip() if len(parts) > 1 else ""
+                        break
+                else:
+                    current.description = stripped
             elif current and not current.description:
                 current.description = stripped
 
@@ -427,8 +456,21 @@ class StructuredParser:
 
             bullet_match = BULLET_PATTERN.match(stripped)
             if bullet_match:
+                bullet_text = bullet_match.group(1)
+                # If bullet contains ":", treat as project name: description
+                if ":" in bullet_text and not current:
+                    name, desc = bullet_text.split(":", 1)
+                    current = Project(name=name.strip(), description=desc.strip(), url="")
+                    entries.append(current)
+                    current = None
+                elif current:
+                    current.bullets.append(bullet_text)
+                continue
+
+            # Skip "Tech Stack:" and similar metadata lines
+            if re.match(r"^(tech\s+stack|technology|technologies|tools)\s*:", stripped, re.IGNORECASE):
                 if current:
-                    current.bullets.append(bullet_match.group(1))
+                    current.description = stripped
                 continue
 
             # New project

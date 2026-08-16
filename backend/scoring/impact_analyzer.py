@@ -21,6 +21,11 @@ STRONG_VERBS = {
     "scaled", "overhauled", "championed", "accelerated", "maximized",
     "minimized", "automated", "streamlined", "delivered", "executed",
     "launched", "revamped", "transformed", "generated", "boosted",
+    "optimized", "optimised", "analysed", "analyzed", "developed",
+    "implemented", "designed", "built", "created", "established",
+    "integrated", "migrated", "refactored", "reduced", "increased",
+    "improved", "enhanced", "strengthened", "modernized", "automated",
+    "orchestrated", "directed", "led", "managed", "drove",
 }
 
 WEAK_VERBS = {
@@ -62,6 +67,8 @@ class ImpactAnalyzer:
         bullets: list[str] = []
         for exp in resume.experience:
             bullets.extend(exp.bullets)
+        for proj in resume.projects:
+            bullets.extend(proj.bullets)
 
         if not bullets:
             return ImpactAnalysisResult(

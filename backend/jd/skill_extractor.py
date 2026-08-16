@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 # Patterns that indicate required vs preferred
 REQUIRED_PATTERNS = [
     re.compile(r"required[:\s]+(.+?)(?:\n|$)", re.IGNORECASE),
-    re.compile(r"must\s+(?:have|know|understand)[:\s]+(.+?)(?:\n|$)", re.IGNORECASE),
+    re.compile(r"must\s+(?:have|know|understand)\s*(?:skills?)?\s*[:\s]+(.+?)(?:\n|$)", re.IGNORECASE),
     re.compile(r"essential[:\s]+(.+?)(?:\n|$)", re.IGNORECASE),
     re.compile(r"minimum\s+(?:qualifications?|requirements?)[:\s]+(.+?)(?:\n|$)", re.IGNORECASE),
 ]
@@ -80,12 +80,11 @@ class JDSkillExtractor:
                     skill.required = False
                     skills.append(skill)
 
-        # If no structured sections, scan entire text
-        if not skills:
-            for skill in self._find_skills_in_text(text):
-                if skill.name not in seen:
-                    seen.add(skill.name)
-                    skills.append(skill)
+        # Always scan entire text for additional skills
+        for skill in self._find_skills_in_text(text):
+            if skill.name not in seen:
+                seen.add(skill.name)
+                skills.append(skill)
 
         logger.info("Extracted %d skills from JD", len(skills))
         return skills
