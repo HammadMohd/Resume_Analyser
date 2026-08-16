@@ -21,12 +21,14 @@ COPY --from=builder /install /usr/local
 
 COPY backend/ backend/
 COPY frontend/ frontend/
+COPY start.sh .
 
-RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser
-RUN mkdir -p /app/uploads && chown -R appuser:appuser /app
+RUN chmod +x start.sh && \
+    groupadd -r appuser && useradd -r -g appuser -d /app appuser && \
+    mkdir -p /app/uploads && chown -R appuser:appuser /app
 
 USER appuser
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["./start.sh"]
