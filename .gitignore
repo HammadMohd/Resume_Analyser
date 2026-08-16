@@ -57,3 +57,14 @@ models/*.pkl
 # Project docs (not for GitHub)
 AGENT.md
 project_plan.md
+PROJECT_TRANSCRIPT.txt
+
+# Test/temp files
+test_*.py
+test_*.txt
+test_*.docx
+create_*.py
+debug*.py
+
+# Lock files
+uv.lock
