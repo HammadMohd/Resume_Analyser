@@ -24,7 +24,10 @@ logger = get_logger(__name__)
 # Patterns that indicate required vs preferred
 REQUIRED_PATTERNS = [
     re.compile(r"required[:\s]+(.+?)(?:\n|$)", re.IGNORECASE),
-    re.compile(r"must\s+(?:have|know|understand)\s*(?:skills?)?\s*[:\s]+(.+?)(?:\n|$)", re.IGNORECASE),
+    re.compile(
+        r"must\s+(?:have|know|understand)\s*(?:skills?)?\s*[:\s]+(.+?)(?:\n|$)",
+        re.IGNORECASE,
+    ),
     re.compile(r"essential[:\s]+(.+?)(?:\n|$)", re.IGNORECASE),
     re.compile(r"minimum\s+(?:qualifications?|requirements?)[:\s]+(.+?)(?:\n|$)", re.IGNORECASE),
 ]

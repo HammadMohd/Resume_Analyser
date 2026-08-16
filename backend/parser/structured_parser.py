@@ -468,7 +468,9 @@ class StructuredParser:
                 continue
 
             # Skip "Tech Stack:" and similar metadata lines
-            if re.match(r"^(tech\s+stack|technology|technologies|tools)\s*:", stripped, re.IGNORECASE):
+            if re.match(
+                r"^(tech\s+stack|technology|technologies|tools)\s*:", stripped, re.IGNORECASE
+            ):
                 if current:
                     current.description = stripped
                 continue

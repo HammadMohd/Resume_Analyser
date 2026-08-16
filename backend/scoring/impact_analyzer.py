@@ -24,8 +24,8 @@ STRONG_VERBS = {
     "optimized", "optimised", "analysed", "analyzed", "developed",
     "implemented", "designed", "built", "created", "established",
     "integrated", "migrated", "refactored", "reduced", "increased",
-    "improved", "enhanced", "strengthened", "modernized", "automated",
-    "orchestrated", "directed", "led", "managed", "drove",
+    "improved", "enhanced", "strengthened", "modernized",
+    "directed", "led", "managed", "drove",
 }
 
 WEAK_VERBS = {
