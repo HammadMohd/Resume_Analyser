@@ -1,0 +1,14 @@
+.git
+.venv
+__pycache__
+*.pyc
+.env
+*.db
+uploads/
+tests/
+.github/
+*.md
+!README.md
+AGENT.md
+project_plan.md
+PROJECT_TRANSCRIPT.txt
