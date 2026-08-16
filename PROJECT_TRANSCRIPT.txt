@@ -1,0 +1,1410 @@
+================================================================================
+           RESUME ANALYZER - COMPLETE PROJECT TRANSCRIPT & DOCUMENTATION
+================================================================================
+Author: Mohammad Hammad
+GitHub: https://github.com/HammadMohd/Resume_Analyser
+Date: August 2026
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1.  Project Overview
+2.  Technology Stack
+3.  Project Structure
+4.  How the Application Works (End-to-End Flow)
+5.  Backend Architecture & Internal Concepts
+6.  API Endpoints Reference
+7.  Frontend Architecture
+8.  Database Design
+9.  LLM Integration (Gemini)
+10. ATS Scoring Algorithm
+11. Parsing Pipeline (PDF/DOCX)
+12. Skills Extraction Engine
+13. Search & Matching (BM25 + Embeddings)
+14. Rule Engine
+15. Multi-ATS Simulation
+16. Export System
+17. Testing Strategy
+18. Docker & Deployment
+19. Development Phases (12-Phase Build)
+20. Key Design Decisions & Tradeoffs
+
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+Resume Analyzer is a production-grade ATS (Applicant Tracking System) simulator
+that analyzes resumes against job descriptions, scores them, identifies missing
+skills, and provides AI-powered improvement suggestions.
+
+WHAT IT DOES:
+- Parses PDF and DOCX resumes into structured JSON
+- Extracts contact info, skills, experience, education, projects
+- Scores resumes against job descriptions (ATS score 0-100)
+- Simulates 5 real ATS platforms (Workday, Greenhouse, Lever, Taleo, iCIMS)
+- Analyzes bullet points for metrics, action verbs, readability
+- Rewrites weak bullets using Google Gemini AI
+- Tailors resumes to specific job descriptions
+- Exports ATS-compliant PDF and DOCX files
+- Provides a glassmorphic web dashboard
+
+RUN COMMAND:
+    $env:DEBUG="true"; fastapi dev backend/main.py
+
+TEST COMMAND:
+    python -m pytest tests/ -v
+
+FRONTEND:
+    Open http://localhost:8000 in browser (served via FastAPI StaticFiles)
+
+
+================================================================================
+2. TECHNOLOGY STACK
+================================================================================
+
+BACKEND:
+    Framework:      FastAPI (async Python web framework)
+    Language:       Python 3.11
+    Validation:     Pydantic v2 + pydantic-settings
+    Database:       SQLAlchemy (async) + SQLite (dev) / PostgreSQL (prod)
+    PDF Parsing:    PDFPlumber (primary) + PyMuPDF (fallback)
+    DOCX Parsing:   python-docx
+    OCR:            Tesseract (pytesseract + Pillow)
+    Skills DB:      Custom 500+ skill database (regex-based)
+    NER:            Custom regex-based (no spaCy/NLTK in prod)
+    Search:         rank-bm25 (BM25) + scikit-learn (TF-IDF fallback)
+    LLM:            Google Gemini (google-generativeai v0.8.6)
+    PDF Export:     ReportLab
+    DOCX Export:    python-docx
+    Rate Limiting:  Custom in-memory per-IP limiter
+    Testing:        pytest + httpx (TestClient)
+    Linting:        Ruff (E/F/W/I/N/UP/B/A/C4/SIM)
+    Type Checking:  MyPy + pydantic plugin
+    Package Mgmt:   uv + pyproject.toml
+
+FRONTEND:
+    HTML/CSS/JS:    Vanilla (no React/Vue/Angular)
+    Charts:         Chart.js (CDN)
+    Fonts:          Google Fonts (Inter)
+    Design:         Glassmorphic dark-mode UI
+    Tabs:           6-tab SPA (Upload, Score, Multi-ATS, Impact, Tailor, Export)
+
+INFRASTRUCTURE:
+    Container:      Docker (multi-stage, Python 3.11-slim)
+    Orchestration:  Docker Compose (API + PostgreSQL + Redis)
+    CI/CD:          GitHub Actions (lint + test + Docker build)
+    Deployment:     uvicorn (4 workers, port 8000)
+
+
+================================================================================
+3. PROJECT STRUCTURE
+================================================================================
+
+Resume_Analyser/
+├── backend/                    # Python backend (FastAPI)
+│   ├── main.py                 # App entrypoint, lifespan, CORS, routers
+│   ├── exceptions.py           # Custom exception hierarchy
+│   ├── config/
+│   │   └── settings.py         # Pydantic Settings (env-based config)
+│   ├── api/routes/
+│   │   ├── resume.py           # Resume upload/parse/validate/export
+│   │   ├── jd.py               # JD parsing endpoints
+│   │   ├── search.py           # Resume-JD matching
+│   │   ├── score.py            # ATS scoring + impact analysis
+│   │   ├── rewrite.py          # Bullet rewriting + tailoring
+│   │   └── metrics.py          # Monitoring metrics
+│   ├── parser/
+│   │   ├── resume_parser.py    # Unified parser (routes to PDF/DOCX/OCR)
+│   │   ├── pdf_parser.py       # PDF extraction (PDFPlumber + PyMuPDF)
+│   │   ├── docx_parser.py      # DOCX extraction (python-docx)
+│   │   ├── ocr_parser.py       # OCR fallback (Tesseract)
+│   │   ├── section_detector.py # Detects resume sections (regex)
+│   │   ├── structured_parser.py# Extracts structured data from sections
+│   │   ├── skills_extractor.py # Skill identification (500+ skills DB)
+│   │   ├── ner_extractor.py    # Regex NER (email, phone, dates, URLs)
+│   │   └── extraction_engine.py# Orchestrates all extraction sub-engines
+│   ├── rules/
+│   │   ├── rule_engine.py      # Coordinates all rule evaluations
+│   │   ├── contact_rules.py    # Email/phone/LinkedIn/GitHub scoring
+│   │   ├── section_rules.py    # Required section presence
+│   │   ├── bullet_rules.py     # Bullet quality (verbs, metrics, length)
+│   │   └── completeness_rules.py# Overall completeness scoring
+│   ├── jd/
+│   │   ├── jd_parser.py        # JD parsing orchestrator
+│   │   ├── skill_extractor.py  # Required/preferred skill extraction
+│   │   └── experience_parser.py# Years of experience extraction
+│   ├── search/
+│   │   ├── hybrid_search.py    # BM25 (0.6) + embeddings (0.4)
+│   │   ├── bm25_search.py      # BM25 keyword ranking
+│   │   └── embedding_search.py # Semantic similarity (sentence-transformers)
+│   ├── scoring/
+│   │   ├── ats_scorer.py       # Master ATS scorer (weighted formula)
+│   │   ├── skills_scorer.py    # Skills match scoring
+│   │   ├── experience_scorer.py# Experience level/years matching
+│   │   └── impact_analyzer.py  # Bullet metrics, verbs, readability
+│   ├── llm/
+│   │   ├── __init__.py         # LLM availability check
+│   │   ├── rewriter.py         # Bullet rewriter (Gemini or rules)
+│   │   ├── star_rewriter.py    # STAR framework enhancer
+│   │   ├── prompt_builder.py   # Constructs LLM prompts
+│   │   ├── validator.py        # Validates LLM output
+│   │   └── schemas.py          # LLM request/response models
+│   ├── services/
+│   │   ├── upload_service.py   # Upload pipeline orchestrator
+│   │   ├── validation_service.py# File validation (extension, MIME, size)
+│   │   ├── validation_enhancer.py# Issue consolidation + bullet examples
+│   │   ├── storage_service.py  # UUID-based file storage
+│   │   ├── tailor_service.py   # Resume tailoring orchestrator
+│   │   └── db_service.py       # Async CRUD operations
+│   ├── ats/
+│   │   └── engine.py           # Multi-ATS emulator (5 platforms)
+│   ├── exporter/
+│   │   ├── pdf_generator.py    # ATS-compliant PDF export
+│   │   └── docx_generator.py   # ATS-compliant DOCX export
+│   ├── db/
+│   │   ├── base.py             # SQLAlchemy DeclarativeBase
+│   │   └── database.py         # Async engine + session factory
+│   ├── models/                 # ORM models (Resume, JD, Analysis, Tailored)
+│   ├── schemas/                # Pydantic schemas (all data structures)
+│   ├── middleware/
+│   │   └── rate_limit.py       # In-memory per-IP rate limiter
+│   └── utils/
+│       └── logging.py          # Logging setup
+├── frontend/
+│   ├── index.html              # SPA dashboard (glassmorphic UI)
+│   ├── app.js                  # Vanilla JS (445 lines)
+│   └── styles.css              # Dark-mode CSS (438 lines)
+├── tests/                      # 199 tests (unit + integration)
+├── docker/
+│   ├── Dockerfile              # Multi-stage Docker build
+│   └── docker-compose.yml      # API + PostgreSQL + Redis
+├── .github/workflows/ci.yml    # GitHub Actions CI/CD
+├── pyproject.toml              # Dependencies & tool config
+├── AGENT.md                    # AI agent development guide
+└── .env                        # Environment variables (gitignored)
+
+
+================================================================================
+4. HOW THE APPLICATION WORKS (END-TO-END FLOW)
+================================================================================
+
+FLOW 1: Upload & Analyze Resume (No JD)
+----------------------------------------
+Browser                    Backend                      Components
+  |                           |                             |
+  |-- POST /api/v1/resumes/ ->|                             |
+  |                           |-- ValidationService ------->| Check extension, MIME, size
+  |                           |-- StorageService ---------->| Save as UUID.pdf
+  |                           |<- UploadResponse -----------|
+  |<- 200 OK ----------------|                             |
+  |                           |                             |
+  |-- POST /api/v1/resumes/extract ->|                      |
+  |                           |-- ResumeParser ----------->| Route to PDF/DOCX parser
+  |                           |   PDFPlumber/PyMuPDF ----->| Extract text blocks
+  |                           |-- StructuredParser ------->| Parse sections, contacts
+  |                           |-- SkillsExtractor -------->| Match against 500+ skills DB
+  |                           |-- NERExtractor ----------->| Regex: email, phone, URLs
+  |                           |<- ExtractionResult --------|
+  |<- 200 OK ----------------|                             |
+  |                           |                             |
+  |-- POST /api/v1/resumes/validate ->|                     |
+  |                           |-- RuleEngine ------------->| Contact, section, bullet rules
+  |                           |-- ValidationEnhancer ----->| Consolidate issues, generate examples
+  |                           |<- RuleResult + examples ---|
+  |<- 200 OK ----------------|                             |
+
+FLOW 2: Analyze Resume against Job Description
+------------------------------------------------
+Browser                    Backend                      Components
+  |                           |                             |
+  |-- POST /api/v1/score/analyze ->|                        |
+  |   (resume file + JD file) |                             |
+  |                           |-- ResumeParser ----------->| Parse resume
+  |                           |-- StructuredParser ------->| Normalize resume
+  |                           |-- JDParser --------------->| Parse JD (skills, exp, edu)
+  |                           |   JDSkillExtractor ------->| Extract required/preferred skills
+  |                           |   JDExperienceParser ----->| Extract years requirement
+  |                           |-- ATSScorer ------------->| Weighted scoring formula
+  |                           |   SkillsScorer ---------->| Match skills (35% weight)
+  |                           |   ExperienceScorer ------>| Match years/level (25%)
+  |                           |   ProjectsScorer -------->| Count projects (15%)
+  |                           |   EducationScorer ------->| Match education (10%)
+  |                           |   StructureScorer ------->| Check sections (10%)
+  |                           |   FormattingScorer ------>| Bullet quality (5%)
+  |                           |<- ATSScore (0-100) --------|
+  |<- 200 OK ----------------|                             |
+
+FLOW 3: AI Bullet Rewrite (Gemini)
+------------------------------------
+Browser                    Backend                      Components
+  |                           |                             |
+  |-- POST /api/v1/rewrite/bullets ->|                      |
+  |   (list of weak bullets)  |                             |
+  |                           |-- PromptBuilder ---------->| Build structured prompt
+  |                           |   "You are a resume       |
+  |                           |    writer. Rewrite..."     |
+  |                           |-- Gemini API ------------->| model.generate_content(prompt)
+  |                           |<- JSON response -----------|
+  |                           |-- Validator -------------->| Check no hallucinations
+  |                           |<- RewriteResponse ---------|
+  |<- 200 OK ----------------|                             |
+
+FLOW 4: Resume Tailoring to JD
+--------------------------------
+Browser                    Backend                      Components
+  |                           |                             |
+  |-- POST /api/v1/rewrite/tailor ->|                       |
+  |   (resume + JD files)     |                             |
+  |                           |-- ResumeTailorService ---->| Find missing skills
+  |                           |-- STARBulletEnhancer ----->| Rewrite each bullet with STAR
+  |                           |   (calls Gemini) -------->| Add missing JD skills
+  |                           |<- ResumeTailorResponse ----|
+  |<- 200 OK ----------------|                             |
+
+
+================================================================================
+5. BACKEND ARCHITECTURE & INTERNAL CONCEPTS
+================================================================================
+
+5.1 LAYERED ARCHITECTURE
+--------------------------
+The backend follows a 4-layer architecture:
+
+    HTTP Layer (API Routes)
+         |
+    Service Layer (Business Logic)
+         |
+    Engine Layer (Domain Logic)
+         |
+    Data Layer (Schemas + DB)
+
+- HTTP Layer: Thin FastAPI routers. Handle request/response, file uploads,
+  error handling. No business logic.
+
+- Service Layer: Orchestrate multiple engines. UploadService coordinates
+  ValidationService + StorageService. TailorService coordinates
+  JDParser + STARBulletEnhancer.
+
+- Engine Layer: Pure domain logic. ATSScorer, RuleEngine, SkillsExtractor,
+  ImpactAnalyzer. No HTTP or database dependencies.
+
+- Data Layer: Pydantic schemas (data contracts) + SQLAlchemy models (persistence).
+
+5.2 PYDANTIC VALIDATION
+--------------------------
+All data flows through Pydantic models:
+
+    Request -> Pydantic validates input -> Business logic -> Pydantic output
+
+Example:
+    class BulletRewriteRequest(BaseModel):
+        original: str           # Required
+        context: str = ""       # Optional with default
+        missing_skills: list[str] = []
+
+    Pydantic automatically:
+    - Validates types (str, list, int, float)
+    - Applies defaults
+    - Serializes/deserializes JSON
+    - Generates OpenAPI docs (Swagger UI at /docs)
+
+5.3 ASYNC/AWAIT PATTERN
+--------------------------
+FastAPI uses async I/O for non-blocking operations:
+
+    @router.post("/analyze")
+    async def analyze_resume(
+        resume: UploadFile = File(...),
+        jd: UploadFile = File(...),
+    ):
+        # await suspends this coroutine, frees the event loop
+        resume_result = await upload_service.upload_resume(resume)
+        # Other requests can be handled while we wait
+
+This allows handling hundreds of concurrent requests with a single thread.
+
+5.4 DEPENDENCY INJECTION
+--------------------------
+FastAPI's Depends() system provides reusable components:
+
+    async def get_db():
+        async with async_session() as session:
+            yield session
+
+    @router.get("/resumes")
+    async def list_resumes(db: AsyncSession = Depends(get_db)):
+        # db is automatically injected
+        ...
+
+5.5 FILE UPLOAD HANDLING
+--------------------------
+UploadFile objects are temporary files on disk:
+
+    resume: UploadFile = File(...)
+    # resume.filename = "original_name.pdf"
+    # resume.content_type = "application/pdf"
+    # await resume.read() -> bytes
+
+Pipeline: validate -> store (UUID rename) -> parse -> extract
+
+5.6 CUSTOM EXCEPTION HIERARCHY
+---------------------------------
+    AppError (base)
+    ├── FileValidationError (422) - Invalid file format
+    ├── FileStorageError (500) - Disk write failure
+    ├── FileTooLargeError (413) - Exceeds size limit
+    ├── FileEmptyError (422) - Empty file uploaded
+    └── UnsupportedFileTypeError (422) - Wrong extension
+
+Each has a to_dict() method for structured JSON error responses.
+
+
+================================================================================
+6. API ENDPOINTS REFERENCE
+================================================================================
+
+RESUME ENDPOINTS (/api/v1/resumes):
+    POST /                    Upload resume file
+    POST /parse               Parse into layout text
+    POST /normalize           Parse + normalize to JSON
+    POST /extract             Full pipeline: parse + normalize + extract
+    POST /validate            Full pipeline: parse + normalize + rule engine
+    POST /export/pdf          Export ATS-compliant PDF
+    POST /export/docx         Export ATS-compliant DOCX
+
+JD ENDPOINTS (/api/v1/jd):
+    POST /parse               Parse JD file (TXT/PDF/DOCX)
+    POST /parse-text          Parse raw text JD
+
+SEARCH ENDPOINTS (/api/v1/search):
+    POST /match               Match resume file vs JD file
+    POST /match-text          Match raw text inputs
+
+SCORE ENDPOINTS (/api/v1/score):
+    POST /analyze             Full ATS scoring (resume + JD files)
+    POST /analyze-text        ATS scoring from raw text
+    POST /multi-ats           Simulate 5 ATS platforms
+    POST /impact              Bullet impact analysis
+
+REWRITE ENDPOINTS (/api/v1/rewrite):
+    POST /bullet              Rewrite single bullet
+    POST /bullets             Rewrite multiple bullets
+    POST /validate            Validate rewritten bullet
+    POST /tailor              STAR-tailor resume to JD
+
+UTILITY:
+    GET  /health              Health check
+    GET  /metrics             Uptime + counters
+    POST /metrics/{name}      Increment counter
+
+
+================================================================================
+7. FRONTEND ARCHITECTURE
+================================================================================
+
+The frontend is a single-page application (SPA) built with vanilla HTML/CSS/JS.
+No build tools, no npm, no bundler. Just static files served by FastAPI.
+
+TAB STRUCTURE:
+    1. Upload & Audit        - Drag-and-drop file upload
+    2. Overview Score        - ATS score breakdown (Chart.js radar)
+    3. Multi-ATS Simulation  - 5 ATS platform comparison
+    4. Impact & Metrics      - Bullet analysis + action verbs
+    5. AI Tailoring Studio   - Gemini-powered bullet rewriting
+    6. Export & Download     - PDF/DOCX download
+
+API COMMUNICATION:
+    fetch('/api/v1/score/analyze', {
+        method: 'POST',
+        body: formData  // FormData with file fields
+    })
+    .then(r => r.json())
+    .then(data => renderResults(data))
+
+CHART VISUALIZATION:
+    Chart.js radar chart showing:
+    - Skills match (35%)
+    - Experience match (25%)
+    - Projects (15%)
+    - Education (10%)
+    - Structure (10%)
+    - Formatting (5%)
+
+DESIGN:
+    - Glassmorphic cards (backdrop-filter: blur)
+    - Dark theme (#090d16 background)
+    - Gradient accents (purple/blue)
+    - Responsive (mobile-friendly)
+    - Loading spinners on API calls
+
+
+================================================================================
+8. DATABASE DESIGN
+================================================================================
+
+4 ORM Models (SQLAlchemy async):
+
+RESUMES TABLE:
+    id              UUID (PK)
+    filename        VARCHAR
+    stored_filename VARCHAR
+    content_type    VARCHAR
+    size_bytes      INTEGER
+    raw_text        TEXT
+    parsed_data     JSON
+    extracted_data  JSON
+    created_at      TIMESTAMP
+
+JOB_DESCRIPTIONS TABLE:
+    id              UUID (PK)
+    title           VARCHAR
+    company         VARCHAR
+    raw_text        TEXT
+    extracted_data  JSON
+    created_at      TIMESTAMP
+
+ANALYSES TABLE:
+    id              UUID (PK)
+    resume_id       UUID (FK -> resumes)
+    jd_id           UUID (FK -> job_descriptions)
+    overall_score   FLOAT
+    grade           VARCHAR
+    breakdown       JSON
+    created_at      TIMESTAMP
+
+TAILORED_RESUMES TABLE:
+    id              UUID (PK)
+    resume_id       UUID (FK -> resumes)
+    jd_id           UUID (FK -> job_descriptions)
+    title           VARCHAR
+    tailored_text   TEXT
+    original_bullets JSON
+    new_bullets     JSON
+    created_at      TIMESTAMP
+
+
+================================================================================
+9. LLM INTEGRATION (GEMINI)
+================================================================================
+
+PROVIDER: Google Gemini (google-generativeai v0.8.6)
+MODEL: gemini-flash-latest (configured in .env)
+FALLBACK: Rule-based logic when API unavailable
+
+3 GEMINI CALL SITES:
+
+1. BULLET REWRITE (backend/llm/rewriter.py:93-95)
+   Prompt: "You are a professional resume writer. Rewrite this bullet..."
+   Output: {"improved": "...", "changes_made": [...], "confidence": 0.8}
+   Used by: POST /api/v1/rewrite/bullets
+
+2. STAR ENHANCEMENT (backend/llm/star_rewriter.py:72-74)
+   Prompt: "Rewrite using STAR methodology (Situation, Task, Action, Result)..."
+   Output: {"star_bullet": "...", "quantified_metric_added": true, ...}
+   Used by: POST /api/v1/rewrite/tailor
+
+3. BULLET EXAMPLES (backend/services/validation_enhancer.py:174-176)
+   Prompt: "Rewrite exactly 5 bullets into improved versions..."
+   Output: [{"original": "...", "improved": "..."}, ...]
+   Used by: POST /api/v1/resumes/validate
+
+PROMPT BUILDING:
+    - Specific role assignment ("You are a professional resume writer")
+    - Clear rules (start with action verb, include metrics, no fabrication)
+    - JSON output format requirement
+    - Context injection (job title, missing skills)
+
+VALIDATION:
+    - Regex extracts JSON from response (may have markdown code blocks)
+    - Pydantic validates output schema
+    - Custom validator checks for hallucinations (no new technologies added)
+
+FALLBACK:
+    - If Gemini API fails or unavailable
+    - Rule-based logic applies improvements:
+      * Stronger action verbs
+      * Trimming long bullets
+      * Basic structure improvements
+    - Lower confidence scores (0.3-0.4 vs 0.8-0.95 for LLM)
+
+
+================================================================================
+10. ATS SCORING ALGORITHM
+================================================================================
+
+WEIGHTED FORMULA:
+    ATS Score = (Skills × 0.35) + (Experience × 0.25) + (Projects × 0.15)
+              + (Education × 0.10) + (Structure × 0.10) + (Formatting × 0.05)
+
+SKILLS SCORING (35%):
+    - Required skill matched: +10 points each
+    - Preferred skill matched: +5 points each
+    - Normalized to 0-100
+
+EXPERIENCE SCORING (25%):
+    - Years requirement met: +60 points
+    - Level requirement met (entry/mid/senior): +40 points
+    - Bonus for exceeding: +10 points
+
+PROJECTS SCORING (15%):
+    - 3+ projects: 80 points
+    - 1-2 projects: 50 points
+    - 0 projects: 0 points
+    - Bonus for JD-relevant projects: +10 each
+
+EDUCATION SCORING (10%):
+    - Has education entries: 80 points
+    - Field matches JD: 100 points
+    - No education: 20 points
+
+STRUCTURE SCORING (10%):
+    - Checks 5 sections: contact, summary, experience, skills, education
+    - Score = (present / total) × 100
+
+FORMATTING SCORING (5%):
+    - Average bullet length 40-200 chars: good
+    - Too short (<40): -20 points
+    - Too long (>200): -10 points
+
+GRADE CALCULATION:
+    A: 90+    B: 80-89    C: 70-79    D: 60-69    F: <60
+
+
+================================================================================
+11. PARSING PIPELINE (PDF/DOCX)
+================================================================================
+
+UNIFIED ENTRY: ResumeParser.parse(file_path, filename)
+    |
+    ├── PDF? -> PDFParser
+    |   ├── Primary: PDFPlumber (text blocks + coordinates)
+    |   └── Fallback: PyMuPDF (page.get_links() for hyperlinks)
+    |
+    ├── DOCX? -> DOCXParser
+    |   ├── python-docx for paragraphs
+    |   └── Hyperlink extraction from relationships
+    |
+    └── Other? -> OCRParser
+        └── Tesseract (pytesseract + Pillow)
+
+SECTION DETECTION (SectionDetector):
+    - Compiles regex patterns for each section type
+    - Scans line-by-line through parsed text
+    - Returns list of {type, title, start, end} dicts
+    - Handles: contact, summary, experience, education, skills, projects,
+      certifications, awards, publications, languages, interests
+
+STRUCTURED PARSING (StructuredParser):
+    - Uses section boundaries to extract section text
+    - _parse_contact(): NER extraction (email, phone, LinkedIn, GitHub)
+    - _parse_experience(): Company, title, dates, bullets
+    - _parse_education(): Institution, degree, dates
+    - _parse_skills(): Category: skill1, skill2 format
+    - _parse_projects(): Name + description + bullets
+
+SKILLS EXTRACTION (SkillsExtractor):
+    - 500+ skills in SKILL_DATABASE (dict of category -> skills)
+    - ALL_SKILLS: flat list of all skill names
+    - Regex patterns: \bskill_name\b (case-insensitive)
+    - Proficiency detection: "expert in X", "proficient with Y"
+
+
+================================================================================
+12. SKILLS EXTRACTION ENGINE
+================================================================================
+
+SKILL DATABASE STRUCTURE:
+    SKILL_DATABASE = {
+        "languages": ["python", "java", "javascript", "sql", ...],
+        "frameworks": ["fastapi", "django", "flask", "react", ...],
+        "cloud": ["aws", "azure", "gcp", "sagemaker", ...],
+        "ml": ["machine learning", "deep learning", "pytorch", ...],
+        "devops": ["docker", "kubernetes", "jenkins", "ci/cd", ...],
+        "databases": ["postgresql", "mysql", "mongodb", ...],
+        ...
+    }
+
+EXTRACTION PROCESS:
+    1. Text is lowercased
+    2. For each skill in ALL_SKILLS:
+       - Compile regex: \bskill_name\b
+       - Search in text
+       - If found: add to results with category and confidence
+    3. Proficiency detection via context keywords
+    4. Deduplication
+
+SKILL MATCHING (for ATS scoring):
+    - Resume skills: extracted from resume text
+    - JD skills: extracted from JD text (required/preferred)
+    - Match: exact lowercase string comparison
+    - Missing: JD skill not in resume skills
+
+
+================================================================================
+13. SEARCH & MATCHING (BM25 + EMBEDDINGS)
+================================================================================
+
+HYBRID SEARCH (backend/search/hybrid_search.py):
+    Final Score = (BM25 × 0.6) + (Embedding × 0.4)
+
+BM25 SEARCH (backend/search/bm25_search.py):
+    - Term frequency-inverse document frequency
+    - Fast, exact-match focused
+    - Good for keyword-heavy matching
+    - Returns: score, matched_terms, term_scores
+
+EMBEDDING SEARCH (backend/search/embedding_search.py):
+    - Primary: sentence-transformers (all-MiniLM-L6-v2)
+    - Fallback: TF-IDF vectorizer (scikit-learn)
+    - Cosine similarity between resume and JD vectors
+    - Captures synonyms and semantic meaning
+    - Returns: score, embedding dimensions
+
+SKILL MATCHING:
+    - Extracts skills from both resume and JD
+    - categorizes as: matching, missing, extra
+    - Returns SkillMatch objects with match_type
+
+WHY HYBRID?
+    - BM25 alone misses synonyms ("ML" vs "machine learning")
+    - Embeddings alone miss exact keyword requirements
+    - Combined gives best of both worlds
+
+
+================================================================================
+14. RULE ENGINE
+================================================================================
+
+RULE CATEGORIES:
+
+1. CONTACT RULES (contact_rules.py):
+    - Email present: 30 points
+    - Phone present: 30 points
+    - LinkedIn present: 25 points
+    - GitHub present: 15 points
+
+2. SECTION RULES (section_rules.py):
+    - Experience section: 35 points
+    - Skills section: 30 points
+    - Education section: 25 points
+    - Summary section: 10 points
+
+3. BULLET RULES (bullet_rules.py):
+    - Starts with action verb: 25 points
+    - Contains metrics/numbers: 30 points
+    - Appropriate length (40-200 chars): 25 points
+    - Mentions technology: 20 points
+    - Action verbs include both American and British spellings
+      (analyzed/analysed, optimized/optimised, etc.)
+
+4. COMPLETENESS RULES (completeness_rules.py):
+    - Combines all category scores
+    - Calculates overall grade (A-F)
+    - Generates recommendations
+
+ISSUE SEVERITY LEVELS:
+    - error: Must fix (missing email, no experience section)
+    - warning: Should fix (bullet too short, weak verb)
+    - info: Nice to have (could add metrics)
+
+VALIDATION ENHANCER (validation_enhancer.py):
+    - Consolidates per-bullet issues into per-section summaries
+    - Generates 5 improved bullet examples via Gemini
+    - Falls back to rule-based examples if LLM unavailable
+
+
+================================================================================
+15. MULTI-ATS SIMULATION
+================================================================================
+
+5 ATS PLATFORMS SIMULATED (backend/ats/engine.py):
+
+1. WORKDAY:
+    - Strict section header matching
+    - Penalizes non-standard formatting
+    - Heavy keyword density requirements
+
+2. GREENHOUSE:
+    - Skill-experience context matching
+    - Values relevant project experience
+    - Moderate keyword requirements
+
+3. LEVER:
+    - Chronological order importance
+    - Contact placement scoring
+    - Balanced keyword/skill matching
+
+4. TALEO:
+    - Exact string matching (case-sensitive)
+    - Bullet point compliance checking
+    - Strict format requirements
+
+5. iCIMS:
+    - Degree hierarchy recognition
+    - Keyword density scoring
+    - Experience level matching
+
+EACH PLATFORM:
+    - Has unique scoring weights
+    - Different penalty rules
+    - Returns platform-specific score + reasoning
+
+
+================================================================================
+16. EXPORT SYSTEM
+================================================================================
+
+PDF EXPORT (backend/exporter/pdf_generator.py):
+    - Uses ReportLab library
+    - ATS-compliant formatting:
+      * Single column layout
+      * Letter size (8.5 x 11 inches)
+      * Clean fonts (Helvetica)
+      * No tables, no graphics
+      * 0.5 inch margins
+    - Preserves structure: name, contact, sections, bullets
+
+DOCX EXPORT (backend/exporter/docx_generator.py):
+    - Uses python-docx library
+    - ATS-compliant formatting:
+      * Single column layout
+      * 0.5 inch margins
+      * Standard fonts
+      * No tables, no text boxes
+    - Preserves structure: headings, bullets, bold text
+
+WHY ATS-COMPLIANT?
+    Real ATS systems reject resumes with:
+    - Tables and text boxes
+    - Headers and footers
+    - Graphics and images
+    - Multi-column layouts
+    - Non-standard fonts
+
+
+================================================================================
+17. TESTING STRATEGY
+================================================================================
+
+199 TESTS TOTAL (pytest):
+
+UNIT TESTS:
+    test_validation.py     - ValidationService (extension, MIME, size)
+    test_storage.py        - StorageService (UUID naming, path)
+    test_parser.py         - PDF/DOCX/OCR parsing
+    test_normalization.py  - Section detection, structured parsing
+    test_extraction.py     - NER, skills extraction
+    test_rules.py          - Contact, section, bullet rules
+    test_jd.py             - JD skill/experience parsing
+    test_search.py         - BM25, embedding, hybrid search
+    test_scoring.py        - Skills, experience, ATS scoring
+    test_llm.py            - Prompt building, validation, rewriting
+    test_multi_ats.py      - 5 ATS platform emulation
+    test_impact_and_tailor.py - Impact analysis, STAR tailoring
+    test_exporter.py       - PDF/DOCX generation
+
+INTEGRATION TESTS:
+    test_upload.py         - Upload endpoint
+    test_integration.py    - End-to-end pipeline
+    test_frontend.py       - Static file serving
+    test_production.py     - Rate limiting, metrics
+
+FIXTURES (conftest.py):
+    - client: FastAPI TestClient
+    - sample_pdf_bytes: In-memory PDF
+    - sample_docx_bytes: In-memory DOCX
+    - Auto-disables rate limiting for tests
+
+
+================================================================================
+18. DOCKER & DEPLOYMENT
+================================================================================
+
+DOCKERFILE (multi-stage):
+    Stage 1 (builder):
+        - Python 3.11-slim base
+        - Install dependencies from pyproject.toml
+        - Copy application code
+
+    Stage 2 (production):
+        - Copy from builder
+        - Create non-root user (appuser)
+        - Health check via urllib
+        - Run uvicorn with 4 workers
+
+DOCKER-COMPOSE:
+    Services:
+        api:        Python app (port 8000)
+        postgres:   PostgreSQL 16 (port 5432)
+        redis:      Redis 7 (port 6379)
+
+    Volumes: persistence for DB and uploads
+    Health checks on all services
+
+CI/CD (GitHub Actions):
+    Triggers: push/PR to main/master
+    Jobs:
+        test:   Ruff lint -> MyPy typecheck -> Pytest with coverage
+        build:  Docker Buildx -> DockerHub push (latest + SHA tags)
+
+
+================================================================================
+19. DEVELOPMENT PHASES (12-PHASE BUILD)
+================================================================================
+
+The project was built incrementally following AGENT.md milestones:
+
+Phase 1:  Foundation        - FastAPI app, config, exceptions, health check
+Phase 2:  Upload System     - File validation, storage, upload endpoint
+Phase 3:  Parsing Engine    - PDF/DOCX/OCR parsing, text extraction
+Phase 4:  Normalization     - Section detection, structured parsing
+Phase 5:  Extraction        - NER, skills extraction, extraction engine
+Phase 6:  Rule Engine       - Contact/section/bullet rules, validation
+Phase 7:  Job Description   - JD parsing, skill extraction, experience parsing
+Phase 8:  Search            - BM25, embeddings, hybrid matching
+Phase 9:  ATS Scoring       - Weighted scoring formula, breakdown
+Phase 10: LLM Layer         - Gemini integration, bullet rewriting, STAR
+Phase 11: Frontend          - Glassmorphic SPA, Chart.js, 6 tabs
+Phase 12: Production        - Rate limiting, metrics, Docker, CI/CD
+
+Each phase:
+    1. Concept explained
+    2. Theory introduced
+    3. Architecture designed
+    4. Implementation plan created
+    5. Code implemented
+    6. Tests written
+    7. Code refactored
+    8. Documentation updated
+    9. Conventional commit made
+
+
+================================================================================
+20. KEY DESIGN DECISIONS & TRADEOFFS
+================================================================================
+
+1. VANILLA JS vs REACT:
+    Decision: Vanilla JS
+    Why: No build tools, no npm, instant loading, simpler deployment
+    Tradeoff: More manual DOM manipulation, no component reuse
+
+2. PYDANTIC vs MARSHMALLOW:
+    Decision: Pydantic v2
+    Why: Native FastAPI integration, faster validation, better DX
+    Tradeoff: Tighter coupling to FastAPI ecosystem
+
+3. REGEX NER vs SPACY:
+    Decision: Regex-based
+    Why: No model download, faster startup, deterministic results
+    Tradeoff: Less accurate for complex entities, harder to maintain
+
+4. GEMINI vs OPENAI:
+    Decision: Gemini (free tier)
+    Why: No cost for development, good quality responses
+    Tradeoff: Less ecosystem support, deprecated library
+
+5. SQLITE vs POSTGRESQL:
+    Decision: SQLite (dev) / PostgreSQL (prod)
+    Why: Zero-config for development, production-ready for deploy
+    Tradeoff: Async SQLite limitations, migration complexity
+
+6. IN-MEMORY RATE LIMITING:
+    Decision: Custom in-memory per-IP
+    Why: No Redis dependency for basic rate limiting
+    Tradeoff: Lost on restart, not distributed
+
+7. STATIC FILES VIA FASTAPI:
+    Decision: Mount frontend/ as StaticFiles
+    Why: Single server, no CORS, simpler deployment
+    Tradeoff: No frontend build pipeline, no hot reload
+
+8. SKILL DATABASE AS PYTHON DICT:
+    Decision: Hardcoded 500+ skills in Python
+    Why: Fast lookup, no external DB query, deterministic
+    Tradeoff: Requires code change to add skills, no learning
+
+
+================================================================================
+21. HOW TO ENHANCE THIS PROJECT
+================================================================================
+
+21.1 PRIORITY 1 - IMMPROVEMENTS (Fix Current Limitations)
+----------------------------------------------------------
+
+A. BETTER JD SKILL EXTRACTION:
+    Problem: JD parser only extracts skills from "Must have skills:" lines
+    Enhancement:
+    - Use LLM to extract skills from full JD description text
+    - Add skill synonyms mapping ("ML" = "machine learning" = "ML/AI")
+    - Add skill hierarchy ("AWS SageMaker" implies "AWS" + "ML")
+    - Extract skills from bullet points in JD ("Experience with X")
+
+B. SMARTER EXPERIENCE CALCULATION:
+    Problem: Counts unique companies × 2 (rough heuristic)
+    Enhancement:
+    - Parse actual date ranges (Jan 2022 - Present = 2.5 years)
+    - Sum overlap-free experience across all entries
+    - Account for concurrent roles (freelance + full-time)
+    - Detect career gaps and adjust calculations
+
+C. EDUCATION MATCHING:
+    Problem: Matches exact field names (garbage from regex)
+    Enhancement:
+    - Map degree levels (B.Tech = BS = Bachelor's)
+    - Match field relevance (CS = Computer Science = SE)
+    - Recognize equivalent qualifications (MCA ≈ MS CS)
+    - Handle international education formats
+
+D. BULLET QUALITY SCORING:
+    Problem: Simple regex for metrics (%/$/numbers)
+    Enhancement:
+    - Detect impact verbs ("increased", "reduced", "improved")
+    - Score bullet structure (Action + Context + Result)
+    - Identify weak bullets ("worked on", "helped with")
+    - Measure specificity (team size, budget, timeline)
+
+
+21.2 PRIORITY 2 - NEW FEATURES
+---------------------------------
+
+A. ATSCompatibility CHECKER:
+    - Analyze resume formatting (fonts, margins, columns)
+    - Detect ATS-unfriendly elements (tables, text boxes, headers)
+    - Score formatting compliance per ATS platform
+    - Suggest specific formatting fixes
+
+B. SKILL GAP ANALYSIS:
+    - Compare resume skills vs JD requirements
+    - Show skill proficiency levels (beginner/intermediate/expert)
+    - Recommend learning paths for missing skills
+    - Link to relevant courses/resources
+
+C. RESUME VERSION TRACKING:
+    - Store multiple versions of same resume
+    - Track score changes over time
+    - A/B test different bullet phrasings
+    - Show improvement history
+
+D. BULK PROCESSING:
+    - Upload 100+ resumes at once
+    - Rank candidates against a JD
+    - Export CSV/Excel with scores
+    - Email notifications for top candidates
+
+E. INTERVIEW QUESTION GENERATOR:
+    - Based on resume + JD gaps
+    - Generate technical questions for missing skills
+    - Create behavioral questions from experience
+    - Provide answer scoring rubrics
+
+
+21.3 PRIORITY 3 - AI/ML ENHANCEMENTS
+----------------------------------------
+
+A. FINE-TUNED EMBEDDINGS:
+    Problem: Using generic sentence-transformers
+    Enhancement:
+    - Fine-tune on resume-JD pairs
+    - Train on industry-specific terminology
+    - Learn domain-specific skill relationships
+    - Improve semantic matching accuracy
+
+B. LLM-BASED SCORING:
+    Problem: Rule-based scoring (deterministic but limited)
+    Enhancement:
+    - Use Gemini/GPT to evaluate resume quality
+    - Generate natural language feedback
+    - Score "culture fit" from resume tone
+    - Provide personalized improvement suggestions
+
+C. AUTOMATIC SKILL EXTRACTION:
+    Problem: Static 500+ skill database
+    Enhancement:
+    - Scrape job boards for new skills
+    - Detect emerging tech trends
+    - Auto-add skills from resume text
+    - Build skill relationship graph
+
+D. PREDICTIVE SCORING:
+    - Predict interview callback probability
+    - Estimate salary range from resume
+    - Predict job match percentage
+    - Recommend target companies
+
+
+21.4 PRIORITY 4 - INFRASTRUCTURE
+------------------------------------
+
+A. PROPER DATABASE:
+    Problem: SQLite for dev, manual PostgreSQL setup
+    Enhancement:
+    - Use Alembic for migrations
+    - Add indexes for search performance
+    - Implement soft deletes
+    - Add audit logging
+
+B. CACHING LAYER:
+    - Cache parsed resumes (Redis)
+    - Cache JD parsing results
+    - Cache embedding vectors
+    - Implement cache invalidation
+
+C. ASYNC TASK QUEUE:
+    - Use Celery for long-running tasks
+    - Background resume processing
+    - Email notifications
+    - Scheduled re-analysis
+
+D. API RATE LIMITING:
+    Problem: In-memory per-IP (lost on restart)
+    Enhancement:
+    - Redis-backed rate limiting
+    - API key authentication
+    - Tiered rate limits (free/pro/enterprise)
+    - Usage analytics
+
+E. MONITORING & OBSERVABILITY:
+    - Add OpenTelemetry tracing
+    - Prometheus metrics endpoint
+    - Grafana dashboards
+    - Alerting on errors/latency
+
+
+21.5 PRIORITY 5 - FRONTEND IMPROVEMENTS
+-------------------------------------------
+
+A. MODERN FRAMEWORK:
+    Problem: Vanilla JS (manual DOM manipulation)
+    Enhancement:
+    - Migrate to React/Next.js
+    - Component-based architecture
+    - State management (Redux/Zustand)
+    - Server-side rendering for SEO
+
+B. REAL-TIME COLLABORATION:
+    - Multiple users edit same resume
+    - Comments and suggestions
+    - Version history with diff view
+    - Share resume via link
+
+C. MOBILE APP:
+    - React Native or Flutter
+    - Camera scan resume (OCR)
+    - Push notifications for score updates
+    - Offline mode
+
+D. TEMPLATE SYSTEM:
+    - 20+ ATS-friendly templates
+    - Industry-specific templates
+    - Custom color/font schemes
+    - One-click template switching
+
+
+21.6 PRIORITY 6 - BUSINESS FEATURES
+---------------------------------------
+
+A. USER ACCOUNTS:
+    - Email/password authentication
+    - OAuth (Google, LinkedIn)
+    - User profiles and preferences
+    - Resume dashboard
+
+B. SUBSCRIPTION MODEL:
+    - Free tier: 5 analyses/month
+    - Pro tier: Unlimited + AI rewrite
+    - Enterprise: API access + bulk processing
+    - Stripe payment integration
+
+C. API PRODUCTIZATION:
+    - Public API with documentation
+    - SDK for Python/JavaScript
+    - Webhook integrations
+    - Rate limiting per API key
+
+D. ANALYTICS DASHBOARD:
+    - Track resume views/downloads
+    - Employer-side candidate tracking
+    - A/B test resume versions
+    - Conversion funnel analysis
+
+
+21.7 PRIORITY 7 - SECURITY & COMPLIANCE
+-------------------------------------------
+
+A. DATA PRIVACY:
+    - GDPR compliance (EU users)
+    - Data retention policies
+    - Right to deletion
+    - Consent management
+
+B. SECURITY HARDENING:
+    - Input sanitization (prevent XSS)
+    - CSRF protection
+    - File upload virus scanning
+    - SQL injection prevention
+
+C. AUDIT LOGGING:
+    - Track all file uploads
+    - Log API access
+    - Monitor suspicious activity
+    - Compliance reporting
+
+
+21.8 SUGGESTED IMPLEMENTATION ROADMAP
+-----------------------------------------
+
+PHASE 1 (1-2 weeks): Fix Core Issues
+    - Better JD skill extraction
+    - Smart experience calculation
+    - Education field matching
+    - Add more action verbs to database
+
+PHASE 2 (2-3 weeks): New Features
+    - ATS compatibility checker
+    - Skill gap analysis
+    - Resume version tracking
+    - Bulk processing
+
+PHASE 3 (3-4 weeks): AI Enhancements
+    - Fine-tune embeddings on resume data
+    - LLM-based scoring feedback
+    - Dynamic skill database
+    - Predictive scoring
+
+PHASE 4 (4-6 weeks): Infrastructure
+    - Alembic migrations
+    - Redis caching
+    - Celery task queue
+    - OpenTelemetry tracing
+
+PHASE 5 (6-8 weeks): Frontend
+    - React migration
+    - Real-time collaboration
+    - Mobile app
+    - Template system
+
+PHASE 6 (8-12 weeks): Business
+    - User authentication
+    - Subscription payments
+    - Public API
+    - Analytics dashboard
+
+
+================================================================================
+22. INTERVIEW-READY PROJECT DESCRIPTION
+================================================================================
+
+22.1 ONE-LINER (30 seconds)
+------------------------------
+"I built an AI-powered Resume Analyzer that simulates how real ATS systems
+screen resumes. It parses PDFs and DOCX files, extracts skills and experience,
+scores resumes against job descriptions, and uses Google Gemini AI to rewrite
+weak bullet points into impactful STAR-format statements."
+
+22.2 ELEVATOR PITCH (2 minutes)
+---------------------------------
+"Applicant Tracking Systems reject 75% of resumes before a human sees them.
+I built a tool that helps job seekers understand exactly what ATS systems look
+for.
+
+The system has three core engines:
+
+FIRST - A PARSING ENGINE that reads PDF and DOCX resumes, detects sections
+(Experience, Education, Skills, Projects), extracts structured data like
+contact info, skills, and work experience, and normalizes everything into
+standard JSON format.
+
+SECOND - A SCORING ENGINE that compares your resume against a job description.
+It uses a weighted formula: 35% Skills match, 25% Experience match, 15%
+Projects, 10% Education, 10% Structure, 5% Formatting. It also simulates
+5 real ATS platforms - Workday, Greenhouse, Lever, Taleo, and iCIMS - each
+with different scoring rules.
+
+THIRD - AN AI REWRITE ENGINE using Google Gemini. It takes weak bullet points
+and transforms them using the STAR framework - Situation, Task, Action, Result.
+It adds quantified metrics, stronger action verbs, and incorporates missing
+skills from the job description.
+
+The whole system has 199 tests, follows a 12-phase development methodology,
+and is deployed on Docker with CI/CD via GitHub Actions."
+
+22.3 TECHNICAL DEEP DIVE (5 minutes)
+---------------------------------------
+
+Q: "Walk me through the architecture."
+
+"The backend follows a 4-layer architecture:
+
+LAYER 1 - HTTP LAYER: FastAPI routers handle requests. Each endpoint is thin -
+just validation and response formatting. No business logic here.
+
+LAYER 2 - SERVICE LAYER: Orchestrate multiple engines. For example,
+UploadService coordinates ValidationService (check file type/size) and
+StorageService (save with UUID filename).
+
+LAYER 3 - ENGINE LAYER: Pure domain logic. ATSScorer calculates scores,
+SkillsExtractor matches skills against a 500+ skill database, ImpactAnalyzer
+checks bullet quality. These have zero HTTP or database dependencies.
+
+LAYER 4 - DATA LAYER: Pydantic schemas define data contracts. SQLAlchemy
+models handle persistence. Async database with PostgreSQL."
+
+Q: "How does the skills extraction work?"
+
+"We maintain a SKILL_DATABASE - a Python dictionary mapping categories to
+skills: languages, frameworks, cloud services, ML tools, DevOps, etc.
+500+ skills total.
+
+When processing a resume, we compile regex patterns for each skill:
+\\bskill_name\\b (case-insensitive). Then scan the text line by line.
+If found, we record the skill with its category and confidence score.
+
+For job descriptions, we extract skills from 'Must have skills:' lines
+AND scan the full description text. We distinguish required vs preferred
+skills based on pattern matching."
+
+Q: "How does the ATS scoring work?"
+
+"It's a weighted formula:
+  Skills (35%): Required skill matched = +10pts, Preferred = +5pts
+  Experience (25%): Years met = +60pts, Level met = +40pts
+  Projects (15%): 3+ projects = 80pts, JD-relevant = bonus
+  Education (10%): Has education = 80pts, Field matches = 100pts
+  Structure (10%): Checks 5 sections present
+  Formatting (5%): Bullet length 40-200 chars
+
+For Multi-ATS simulation, each platform has different rules:
+  Workday: Strict header matching, penalizes non-standard formatting
+  Greenhouse: Skill-experience context matching
+  Lever: Chronological order importance
+  Taleo: Exact string matching, bullet compliance
+  iCIMS: Degree hierarchy, keyword density"
+
+Q: "How does the Gemini integration work?"
+
+"Three call sites:
+
+1. BULLET REWRITE: User submits weak bullet. We build a prompt:
+   'You are a professional resume writer. Rewrite this bullet...'
+   with rules (start with action verb, include metrics, no fabrication).
+   Gemini returns JSON: {improved, changes_made, confidence}.
+
+2. STAR ENHANCEMENT: Transforms bullets into Situation-Task-Action-Result
+   format. Prompt includes target skill and job context.
+
+3. VALIDATION EXAMPLES: Generates 5 improved bullet examples from the
+   user's resume. Falls back to rule-based generation if LLM unavailable.
+
+All outputs go through a Validator that checks for hallucinations -
+no new technologies added, no fake metrics, length within bounds."
+
+Q: "How do you handle error cases?"
+
+"Each layer has fallback mechanisms:
+  - PDF parsing: PDFPlumber primary, PyMuPDF fallback, OCR last resort
+  - LLM calls: Gemini primary, rule-based fallback
+  - Database: SQLite for dev, PostgreSQL for prod
+  - Skills: Exact match primary, partial match fallback
+
+Custom exception hierarchy: AppError -> FileValidationError,
+FileStorageError, FileTooLargeError, FileEmptyError,
+UnsupportedFileTypeError. Each has structured to_dict() for JSON responses."
+
+Q: "What testing strategy did you use?"
+
+"199 tests across 17 test files:
+  - Unit tests for each engine (parser, scorer, extractor, rules)
+  - Integration tests for API endpoints
+  - End-to-end pipeline tests (upload -> parse -> score -> response)
+  - Frontend static file serving tests
+  - Production tests (rate limiting, metrics)
+
+Fixtures provide TestClient, sample PDF/DOCX bytes, and auto-disable
+rate limiting. Run with: python -m pytest tests/ -v"
+
+Q: "What challenges did you face?"
+
+"THREE MAJOR CHALLENGES:
+
+1. SECTION DETECTION: Resumes don't follow a standard format. Some use
+   'Skills:', some 'Technical Skills', some 'Key Skills'. I built a
+   regex-based section detector with fallback patterns. The hardest
+   part was inline content like 'Skills: Python, Java' being detected
+   as a section header vs data. Solution: removed the ':' fallback
+   and only match standalone headers.
+
+2. JD SKILL EXTRACTION: Job descriptions mention skills in different
+   formats: 'Must have skills: Python', 'Experience with ML required',
+   'Proficiency in Java preferred'. The regex patterns needed to handle
+   all these variations. Solution: multiple pattern groups for required
+   vs preferred, plus full-text scanning as fallback.
+
+3. EXPERIENCE PARSING: Different resume formats: 'Company | Location',
+   'Company at Location', 'Title at Company'. The parser needed to
+   handle all variations. Solution: multi-separator detection with
+   fallback logic."
+
+22.4 KEY METRICS TO MENTION
+------------------------------
+- 199 tests, all passing
+- 500+ skills in database
+- 5 ATS platforms simulated
+- 12 development phases
+- 80+ Python files
+- ~5000+ lines of backend code
+- 3 Gemini AI integration points
+- 6 API route groups (20+ endpoints)
+- PDF + DOCX parsing with OCR fallback
+- BM25 + Embedding hybrid search
+
+22.5 TECHNOLOGIES TO NAME-DROP
+---------------------------------
+BACKEND:     FastAPI, Pydantic, SQLAlchemy, PyMuPDF, PDFPlumber, python-docx
+AI/ML:       Google Gemini, sentence-transformers, BM25, TF-IDF
+DEVOPS:      Docker, GitHub Actions, PostgreSQL, Redis
+FRONTEND:    Vanilla JS, Chart.js, CSS Glassmorphism
+TESTING:     pytest, Ruff, MyPy
+ARCHITECTURE: 4-layer, async/await, dependency injection, event-driven
+
+22.6 COMMON INTERVIEW QUESTIONS & ANSWERS
+-------------------------------------------
+
+Q: "Why did you choose FastAPI over Django?"
+A: "FastAPI provides native async/await support, automatic OpenAPI docs,
+    and Pydantic integration. For a stateless API service, it's lighter
+    and faster than Django's full-stack framework."
+
+Q: "Why not use spaCy for NER?"
+A: "spaCy requires downloading large models (~500MB) and adds startup
+    time. For resume parsing, regex-based NER is deterministic, faster,
+    and accurate enough for structured formats like emails, phones, and
+    dates."
+
+Q: "How would you scale this to 1000 concurrent users?"
+A: "Current bottlenecks: single-process SQLite, in-memory rate limiting.
+    Solutions: PostgreSQL connection pooling, Redis for rate limiting
+    and caching, Celery for async task queue, horizontal scaling with
+    multiple uvicorn workers."
+
+Q: "What would you do differently?"
+A: "I'd use a fine-tuned embedding model trained on resume-JD pairs
+    instead of generic sentence-transformers. I'd also add a proper
+    skill knowledge graph instead of a flat dictionary."
+
+Q: "How do you handle resume formats you haven't seen?"
+A: "The parser has fallback chains: PDFPlumber -> PyMuPDF -> OCR.
+    Section detection uses multiple regex patterns. Skills extraction
+    scans full text as fallback. Each layer degrades gracefully."
+
+
+================================================================================
+                         END OF TRANSCRIPT
+================================================================================
+Generated by: Mohammad Hammad
+Project: Resume Analyzer
+Repository: https://github.com/HammadMohd/Resume_Analyser
+Total Files: 80+ Python files, 3 frontend files, 17 test files
+Total Tests: 199 (all passing)
+Lines of Code: ~5000+ (backend) + ~900 (frontend)
+================================================================================
